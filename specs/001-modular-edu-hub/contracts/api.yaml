@@ -1,0 +1,1065 @@
+openapi: 3.0.3
+info:
+  title: Hub Éducatif Modulaire API
+  description: |
+    API for the Modular Educational Hub MVP.
+    - Content endpoints: Read-only access to published educational content
+    - Progression endpoints: User-specific progress tracking
+    - Quiz endpoints: Quiz submission and validation
+    - Admin endpoints: Content management (requires admin authentication)
+  version: 1.0.0
+  contact:
+    name: DowzeAcademy Team
+
+servers:
+  - url: /api
+    description: Next.js API routes
+
+tags:
+  - name: Content
+    description: Public content endpoints (published only)
+  - name: Progression
+    description: User progression tracking
+  - name: Quiz
+    description: Quiz submission and validation
+  - name: Admin
+    description: Content management (admin only)
+
+paths:
+  # ============================================================================
+  # CONTENT ENDPOINTS (Public, Read-only, Published content)
+  # ============================================================================
+
+  /content/domains:
+    get:
+      tags: [Content]
+      summary: List all published domains
+      operationId: listDomains
+      responses:
+        '200':
+          description: List of published domains
+          headers:
+            ETag:
+              schema:
+                type: string
+              description: Content version for caching
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Domain'
+
+  /content/domains/{domainId}:
+    get:
+      tags: [Content]
+      summary: Get domain details with packs
+      operationId: getDomain
+      parameters:
+        - name: domainId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Domain with packs
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DomainWithPacks'
+        '404':
+          description: Domain not found or not published
+
+  /content/packs/{packId}:
+    get:
+      tags: [Content]
+      summary: Get pack details with disciplines
+      operationId: getPack
+      parameters:
+        - name: packId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Pack with disciplines
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PackWithDisciplines'
+        '404':
+          description: Pack not found or not published
+
+  /content/disciplines/{disciplineId}:
+    get:
+      tags: [Content]
+      summary: Get discipline details with modules
+      operationId: getDiscipline
+      parameters:
+        - name: disciplineId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Discipline with modules
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DisciplineWithModules'
+        '404':
+          description: Discipline not found or not published
+
+  /content/modules/{moduleId}:
+    get:
+      tags: [Content]
+      summary: Get module with full lesson content
+      operationId: getModule
+      parameters:
+        - name: moduleId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Module with lesson (theory, quiz questions, practice)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModuleWithLesson'
+        '404':
+          description: Module not found or not published
+
+  # ============================================================================
+  # PROGRESSION ENDPOINTS (Authenticated users)
+  # ============================================================================
+
+  /progression:
+    get:
+      tags: [Progression]
+      summary: Get all progression for current user
+      operationId: getUserProgression
+      security:
+        - sessionAuth: []
+      responses:
+        '200':
+          description: User's progression across all modules
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/UserProgression'
+        '401':
+          description: Not authenticated
+
+  /progression/discipline/{disciplineId}:
+    get:
+      tags: [Progression]
+      summary: Get progression for modules in a discipline
+      operationId: getDisciplineProgression
+      security:
+        - sessionAuth: []
+      parameters:
+        - name: disciplineId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: User's progression for discipline modules
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/UserProgression'
+                  stats:
+                    $ref: '#/components/schemas/ProgressionStats'
+
+  /progression/module/{moduleId}/theory:
+    post:
+      tags: [Progression]
+      summary: Mark theory as viewed
+      operationId: markTheoryViewed
+      security:
+        - sessionAuth: []
+      parameters:
+        - name: moduleId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Theory marked as viewed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProgression'
+        '403':
+          description: Module is locked
+        '404':
+          description: Module not found
+
+  /progression/module/{moduleId}/practice:
+    post:
+      tags: [Progression]
+      summary: Mark practice as completed (declarative validation)
+      operationId: completePractice
+      security:
+        - sessionAuth: []
+      parameters:
+        - name: moduleId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Practice completed, module may be completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProgression'
+        '400':
+          description: Quiz not yet passed
+        '403':
+          description: Module is locked
+
+  # ============================================================================
+  # QUIZ ENDPOINTS (Authenticated users)
+  # ============================================================================
+
+  /quiz/{moduleId}/submit:
+    post:
+      tags: [Quiz]
+      summary: Submit quiz answers
+      operationId: submitQuiz
+      security:
+        - sessionAuth: []
+      parameters:
+        - name: moduleId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QuizSubmission'
+      responses:
+        '200':
+          description: Quiz result with feedback
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuizResult'
+        '400':
+          description: Invalid answers format
+        '403':
+          description: Module is locked or theory not viewed
+
+  /quiz/{moduleId}/attempts:
+    get:
+      tags: [Quiz]
+      summary: Get quiz attempt history for a module
+      operationId: getQuizAttempts
+      security:
+        - sessionAuth: []
+      parameters:
+        - name: moduleId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: List of quiz attempts
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/QuizAttempt'
+
+  # ============================================================================
+  # ADMIN ENDPOINTS (Admin authentication required)
+  # ============================================================================
+
+  /admin/auth/login:
+    post:
+      tags: [Admin]
+      summary: Admin login
+      operationId: adminLogin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username, password]
+              properties:
+                username:
+                  type: string
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Login successful
+        '401':
+          description: Invalid credentials
+
+  /admin/auth/logout:
+    post:
+      tags: [Admin]
+      summary: Admin logout
+      operationId: adminLogout
+      security:
+        - adminAuth: []
+      responses:
+        '200':
+          description: Logged out
+
+  /admin/domains:
+    get:
+      tags: [Admin]
+      summary: List all domains (including drafts)
+      operationId: adminListDomains
+      security:
+        - adminAuth: []
+      responses:
+        '200':
+          description: All domains
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Domain'
+    post:
+      tags: [Admin]
+      summary: Create domain
+      operationId: createDomain
+      security:
+        - adminAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DomainInput'
+      responses:
+        '201':
+          description: Domain created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Domain'
+
+  /admin/domains/{domainId}:
+    get:
+      tags: [Admin]
+      summary: Get domain details
+      operationId: adminGetDomain
+      security:
+        - adminAuth: []
+      parameters:
+        - name: domainId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Domain details with updatedAt for staleness check
+          headers:
+            X-Updated-At:
+              schema:
+                type: string
+                format: date-time
+              description: Last update timestamp for staleness detection
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Domain'
+    put:
+      tags: [Admin]
+      summary: Update domain
+      operationId: updateDomain
+      security:
+        - adminAuth: []
+      parameters:
+        - name: domainId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: X-If-Unmodified-Since
+          in: header
+          required: false
+          schema:
+            type: string
+            format: date-time
+          description: Expected updatedAt for staleness check
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DomainInput'
+      responses:
+        '200':
+          description: Domain updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Domain'
+        '409':
+          description: Conflict - content was modified since loaded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConflictError'
+    delete:
+      tags: [Admin]
+      summary: Delete domain (soft delete)
+      operationId: deleteDomain
+      security:
+        - adminAuth: []
+      parameters:
+        - name: domainId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Domain deleted
+
+  /admin/domains/{domainId}/publish:
+    post:
+      tags: [Admin]
+      summary: Publish domain
+      operationId: publishDomain
+      security:
+        - adminAuth: []
+      parameters:
+        - name: domainId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Domain published
+        '400':
+          description: Cannot publish (validation errors)
+
+  # Similar CRUD endpoints for packs, disciplines, modules, lessons...
+  # (Following same pattern as domains)
+
+  /admin/packs:
+    get:
+      tags: [Admin]
+      summary: List all packs
+      operationId: adminListPacks
+      security:
+        - adminAuth: []
+      parameters:
+        - name: domainId
+          in: query
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: All packs
+    post:
+      tags: [Admin]
+      summary: Create pack
+      operationId: createPack
+      security:
+        - adminAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PackInput'
+      responses:
+        '201':
+          description: Pack created
+
+  /admin/disciplines:
+    get:
+      tags: [Admin]
+      summary: List all disciplines
+      operationId: adminListDisciplines
+      security:
+        - adminAuth: []
+      parameters:
+        - name: packId
+          in: query
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: All disciplines
+    post:
+      tags: [Admin]
+      summary: Create discipline
+      operationId: createDiscipline
+      security:
+        - adminAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DisciplineInput'
+      responses:
+        '201':
+          description: Discipline created
+
+  /admin/modules:
+    get:
+      tags: [Admin]
+      summary: List all modules
+      operationId: adminListModules
+      security:
+        - adminAuth: []
+      parameters:
+        - name: disciplineId
+          in: query
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: All modules
+    post:
+      tags: [Admin]
+      summary: Create module
+      operationId: createModule
+      security:
+        - adminAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ModuleInput'
+      responses:
+        '201':
+          description: Module created
+
+  /admin/modules/{moduleId}/lesson:
+    put:
+      tags: [Admin]
+      summary: Update module lesson (theory, quiz, practice)
+      operationId: updateLesson
+      security:
+        - adminAuth: []
+      parameters:
+        - name: moduleId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LessonInput'
+      responses:
+        '200':
+          description: Lesson updated
+
+components:
+  securitySchemes:
+    sessionAuth:
+      type: apiKey
+      in: cookie
+      name: session
+      description: Learner session cookie
+    adminAuth:
+      type: apiKey
+      in: cookie
+      name: admin-session
+      description: Admin session cookie
+
+  schemas:
+    # Content Schemas
+    Domain:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        icon:
+          type: string
+          nullable: true
+        status:
+          $ref: '#/components/schemas/ContentStatus'
+        order:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    DomainWithPacks:
+      allOf:
+        - $ref: '#/components/schemas/Domain'
+        - type: object
+          properties:
+            packs:
+              type: array
+              items:
+                $ref: '#/components/schemas/Pack'
+
+    Pack:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        domainId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        status:
+          $ref: '#/components/schemas/ContentStatus'
+        order:
+          type: integer
+
+    PackWithDisciplines:
+      allOf:
+        - $ref: '#/components/schemas/Pack'
+        - type: object
+          properties:
+            disciplines:
+              type: array
+              items:
+                $ref: '#/components/schemas/Discipline'
+
+    Discipline:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        packId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        status:
+          $ref: '#/components/schemas/ContentStatus'
+        order:
+          type: integer
+
+    DisciplineWithModules:
+      allOf:
+        - $ref: '#/components/schemas/Discipline'
+        - type: object
+          properties:
+            modules:
+              type: array
+              items:
+                $ref: '#/components/schemas/Module'
+
+    Module:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        disciplineId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        status:
+          $ref: '#/components/schemas/ContentStatus'
+        order:
+          type: integer
+        prerequisites:
+          type: array
+          items:
+            type: string
+            format: uuid
+
+    ModuleWithLesson:
+      allOf:
+        - $ref: '#/components/schemas/Module'
+        - type: object
+          properties:
+            lesson:
+              $ref: '#/components/schemas/Lesson'
+
+    Lesson:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        theoryContent:
+          type: string
+        quizThreshold:
+          type: integer
+          minimum: 0
+          maximum: 100
+        practiceType:
+          $ref: '#/components/schemas/PracticeType'
+        practiceInstructions:
+          type: string
+        practiceValidationMode:
+          $ref: '#/components/schemas/PracticeValidationMode'
+        questions:
+          type: array
+          items:
+            $ref: '#/components/schemas/QuizQuestion'
+
+    QuizQuestion:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        questionText:
+          type: string
+        questionType:
+          $ref: '#/components/schemas/QuestionType'
+        options:
+          type: array
+          nullable: true
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              text:
+                type: string
+        order:
+          type: integer
+      description: Note - correctAnswer is NOT included in public response
+
+    # Progression Schemas
+    UserProgression:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        moduleId:
+          type: string
+          format: uuid
+        status:
+          $ref: '#/components/schemas/ModuleProgressStatus'
+        theoryViewedAt:
+          type: string
+          format: date-time
+          nullable: true
+        quizPassedAt:
+          type: string
+          format: date-time
+          nullable: true
+        practiceCompletedAt:
+          type: string
+          format: date-time
+          nullable: true
+        completedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    ProgressionStats:
+      type: object
+      properties:
+        total:
+          type: integer
+        completed:
+          type: integer
+        inProgress:
+          type: integer
+        available:
+          type: integer
+        locked:
+          type: integer
+        percentage:
+          type: number
+          format: float
+
+    # Quiz Schemas
+    QuizSubmission:
+      type: object
+      required: [answers]
+      properties:
+        answers:
+          type: array
+          items:
+            type: object
+            required: [questionId, answer]
+            properties:
+              questionId:
+                type: string
+                format: uuid
+              answer:
+                oneOf:
+                  - type: string
+                  - type: array
+                    items:
+                      type: string
+
+    QuizResult:
+      type: object
+      properties:
+        score:
+          type: integer
+          minimum: 0
+          maximum: 100
+        passed:
+          type: boolean
+        threshold:
+          type: integer
+        feedback:
+          type: array
+          items:
+            type: object
+            properties:
+              questionId:
+                type: string
+                format: uuid
+              correct:
+                type: boolean
+              feedback:
+                type: string
+                nullable: true
+
+    QuizAttempt:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        score:
+          type: integer
+        passed:
+          type: boolean
+        attemptedAt:
+          type: string
+          format: date-time
+
+    # Admin Input Schemas
+    DomainInput:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          maxLength: 100
+        description:
+          type: string
+          nullable: true
+        icon:
+          type: string
+          nullable: true
+        order:
+          type: integer
+
+    PackInput:
+      type: object
+      required: [domainId, name]
+      properties:
+        domainId:
+          type: string
+          format: uuid
+        name:
+          type: string
+          maxLength: 100
+        description:
+          type: string
+          nullable: true
+        order:
+          type: integer
+
+    DisciplineInput:
+      type: object
+      required: [packId, name]
+      properties:
+        packId:
+          type: string
+          format: uuid
+        name:
+          type: string
+          maxLength: 100
+        description:
+          type: string
+          nullable: true
+        order:
+          type: integer
+
+    ModuleInput:
+      type: object
+      required: [disciplineId, name]
+      properties:
+        disciplineId:
+          type: string
+          format: uuid
+        name:
+          type: string
+          maxLength: 100
+        description:
+          type: string
+          nullable: true
+        order:
+          type: integer
+        prerequisites:
+          type: array
+          items:
+            type: string
+            format: uuid
+
+    LessonInput:
+      type: object
+      required: [theoryContent, practiceType, practiceInstructions, questions]
+      properties:
+        theoryContent:
+          type: string
+        quizThreshold:
+          type: integer
+          minimum: 0
+          maximum: 100
+          default: 70
+        practiceType:
+          $ref: '#/components/schemas/PracticeType'
+        practiceInstructions:
+          type: string
+        practiceValidationMode:
+          $ref: '#/components/schemas/PracticeValidationMode'
+        questions:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/QuizQuestionInput'
+
+    QuizQuestionInput:
+      type: object
+      required: [questionText, questionType, correctAnswer]
+      properties:
+        questionText:
+          type: string
+        questionType:
+          $ref: '#/components/schemas/QuestionType'
+        options:
+          type: array
+          nullable: true
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              text:
+                type: string
+        correctAnswer:
+          oneOf:
+            - type: string
+            - type: array
+              items:
+                type: string
+        feedback:
+          type: string
+          nullable: true
+        order:
+          type: integer
+
+    ConflictError:
+      type: object
+      properties:
+        error:
+          type: string
+          example: "Content was modified since you loaded it"
+        currentUpdatedAt:
+          type: string
+          format: date-time
+        yourUpdatedAt:
+          type: string
+          format: date-time
+
+    # Enums
+    ContentStatus:
+      type: string
+      enum: [DRAFT, PUBLISHED]
+
+    ModuleProgressStatus:
+      type: string
+      enum: [LOCKED, AVAILABLE, IN_PROGRESS, COMPLETED]
+
+    QuestionType:
+      type: string
+      enum: [SINGLE_CHOICE, MULTIPLE_CHOICE, SHORT_TEXT]
+
+    PracticeType:
+      type: string
+      enum: [IN_GAME, EXERCICES, PROJET, AUTO_EVALUATION]
+
+    PracticeValidationMode:
+      type: string
+      enum: [DECLARATIVE, AUTOMATIC, MANUAL]

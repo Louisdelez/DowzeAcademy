@@ -1,0 +1,215 @@
+// Hub Éducatif Modulaire - Database Schema
+// See specs/001-modular-edu-hub/data-model.md for documentation
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ============================================
+// ENUMS
+// ============================================
+
+enum ContentStatus {
+  DRAFT
+  PUBLISHED
+}
+
+enum ModuleProgressStatus {
+  LOCKED
+  AVAILABLE
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum QuestionType {
+  SINGLE_CHOICE
+  MULTIPLE_CHOICE
+  SHORT_TEXT
+}
+
+enum PracticeType {
+  IN_GAME
+  EXERCICES
+  PROJET
+  AUTO_EVALUATION
+}
+
+enum PracticeValidationMode {
+  DECLARATIVE
+  AUTOMATIC
+  MANUAL
+}
+
+// ============================================
+// CONTENT MODELS
+// ============================================
+
+model Domain {
+  id          String        @id @default(uuid())
+  name        String        @unique @db.VarChar(100)
+  description String?       @db.Text
+  icon        String?       @db.VarChar(255)
+  status      ContentStatus @default(DRAFT)
+  order       Int           @default(0)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  deletedAt   DateTime?
+
+  packs Pack[]
+
+  @@index([status, order])
+  @@index([deletedAt])
+}
+
+model Pack {
+  id          String        @id @default(uuid())
+  domainId    String
+  name        String        @db.VarChar(100)
+  description String?       @db.Text
+  status      ContentStatus @default(DRAFT)
+  order       Int           @default(0)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  deletedAt   DateTime?
+
+  domain      Domain       @relation(fields: [domainId], references: [id])
+  disciplines Discipline[]
+
+  @@index([domainId, status, order])
+  @@index([deletedAt])
+}
+
+model Discipline {
+  id          String        @id @default(uuid())
+  packId      String
+  name        String        @db.VarChar(100)
+  description String?       @db.Text
+  status      ContentStatus @default(DRAFT)
+  order       Int           @default(0)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  deletedAt   DateTime?
+
+  pack    Pack     @relation(fields: [packId], references: [id])
+  modules Module[]
+
+  @@index([packId, status, order])
+  @@index([deletedAt])
+}
+
+model Module {
+  id            String        @id @default(uuid())
+  disciplineId  String
+  name          String        @db.VarChar(100)
+  description   String?       @db.Text
+  status        ContentStatus @default(DRAFT)
+  order         Int           @default(0)
+  prerequisites String[]      @default([])
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  deletedAt     DateTime?
+
+  discipline   Discipline        @relation(fields: [disciplineId], references: [id])
+  lesson       Lesson?
+  progressions UserProgression[]
+
+  @@index([disciplineId, status, order])
+  @@index([deletedAt])
+}
+
+model Lesson {
+  id                     String                 @id @default(uuid())
+  moduleId               String                 @unique
+  theoryContent          String                 @db.Text
+  quizThreshold          Int                    @default(70)
+  practiceType           PracticeType
+  practiceInstructions   String                 @db.Text
+  practiceValidationMode PracticeValidationMode @default(DECLARATIVE)
+  createdAt              DateTime               @default(now())
+  updatedAt              DateTime               @updatedAt
+
+  module    Module         @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  questions QuizQuestion[]
+}
+
+model QuizQuestion {
+  id            String       @id @default(uuid())
+  lessonId      String
+  questionText  String       @db.Text
+  questionType  QuestionType
+  options       Json?
+  correctAnswer Json
+  feedback      String?      @db.Text
+  order         Int          @default(0)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@index([lessonId, order])
+}
+
+// ============================================
+// USER MODELS
+// ============================================
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique @db.VarChar(255)
+  name         String?  @db.VarChar(100)
+  passwordHash String   @db.VarChar(255)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  progressions UserProgression[]
+}
+
+model AdminUser {
+  id           String   @id @default(uuid())
+  username     String   @unique @db.VarChar(50)
+  passwordHash String   @db.VarChar(255)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+// ============================================
+// PROGRESSION MODELS
+// ============================================
+
+model UserProgression {
+  id                  String               @id @default(uuid())
+  userId              String
+  moduleId            String
+  status              ModuleProgressStatus @default(LOCKED)
+  theoryViewedAt      DateTime?
+  quizPassedAt        DateTime?
+  practiceCompletedAt DateTime?
+  completedAt         DateTime?
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+
+  user     User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  module   Module        @relation(fields: [moduleId], references: [id])
+  attempts QuizAttempt[]
+
+  @@unique([userId, moduleId])
+  @@index([userId, status])
+}
+
+model QuizAttempt {
+  id            String   @id @default(uuid())
+  progressionId String
+  answers       Json
+  score         Int
+  passed        Boolean
+  attemptedAt   DateTime @default(now())
+
+  progression UserProgression @relation(fields: [progressionId], references: [id], onDelete: Cascade)
+
+  @@index([progressionId, attemptedAt])
+}
