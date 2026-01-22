@@ -46,24 +46,33 @@ export default async function ModulePage({ params }: ModulePageProps) {
       <Breadcrumb items={breadcrumbItems} />
 
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">{module.name}</h1>
-        {module.description && <p className="text-gray-600">{module.description}</p>}
+        <h1 className="text-3xl font-bold mb-2" style={{ color: 'var(--color-text)' }}>
+          {module.name}
+        </h1>
+        {module.description && (
+          <p style={{ color: 'var(--color-text-secondary)' }}>{module.description}</p>
+        )}
       </div>
 
       <ModuleContent
         moduleId={module.id}
+        moduleName={module.name}
         lesson={{
           id: module.lesson.id,
           theoryContent: module.lesson.theoryContent,
           quizThreshold: module.lesson.quizThreshold,
           practiceType: module.lesson.practiceType,
           practiceInstructions: module.lesson.practiceInstructions,
+          mode: module.lesson.mode,
           questions: module.lesson.questions.map((q) => ({
             id: q.id,
             questionText: q.questionText,
             questionType: q.questionType,
             options: q.options as { id: string; text: string }[] | null,
             order: q.order,
+            linkedTheorySection: q.linkedTheorySection,
+            correctAnswer: q.correctAnswer as string,
+            explanation: q.feedback as string | null,
           })),
         }}
       />

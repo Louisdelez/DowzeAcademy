@@ -31,7 +31,7 @@ export async function PUT(request: Request, { params }: RouteParams) {
   try {
     const { moduleId } = await params;
     const body = await request.json();
-    const { theoryContent, quizThreshold, practiceType, practiceInstructions, questions } = body;
+    const { theoryContent, quizThreshold, practiceType, practiceInstructions, questions, mode } = body;
 
     // Validate required fields
     if (!theoryContent || !practiceType || !practiceInstructions) {
@@ -47,6 +47,7 @@ export async function PUT(request: Request, { params }: RouteParams) {
       quizThreshold: quizThreshold || 70,
       practiceType,
       practiceInstructions,
+      mode,
     });
 
     // Update questions if provided

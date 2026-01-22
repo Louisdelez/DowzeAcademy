@@ -36,15 +36,31 @@ export default async function DisciplinePage({ params }: DisciplinePageProps) {
       <Breadcrumb items={breadcrumbItems} />
 
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">{discipline.name}</h1>
-        {discipline.description && <p className="text-gray-600">{discipline.description}</p>}
+        <h1
+          className="text-3xl font-bold mb-2"
+          style={{ color: 'var(--color-text)' }}
+        >
+          {discipline.name}
+        </h1>
+        {discipline.description && (
+          <p style={{ color: 'var(--color-text-secondary)' }}>
+            {discipline.description}
+          </p>
+        )}
       </div>
 
-      <h2 className="text-xl font-semibold text-gray-900 mb-4">Modules</h2>
+      <h2
+        className="text-xl font-semibold mb-4"
+        style={{ color: 'var(--color-text)' }}
+      >
+        Modules
+      </h2>
 
       {discipline.modules.length === 0 ? (
         <div className="text-center py-12">
-          <p className="text-gray-500">Aucun module disponible dans cette discipline.</p>
+          <p style={{ color: 'var(--color-text-muted)' }}>
+            Aucun module disponible dans cette discipline.
+          </p>
         </div>
       ) : (
         <DisciplineModules disciplineId={id} modules={discipline.modules} />

@@ -21,7 +21,10 @@ export function ProgressStats({ stats, size = 'md', showBar = true }: ProgressSt
           color={stats.percentage === 100 ? 'green' : 'blue'}
         />
       )}
-      <div className={`flex justify-between ${textSize} text-gray-600 mt-1`}>
+      <div
+        className={`flex justify-between ${textSize} mt-1`}
+        style={{ color: 'var(--color-text-secondary)' }}
+      >
         <span>
           {stats.completed}/{stats.total} modules
         </span>

@@ -34,16 +34,32 @@ export default async function DomainPage({ params }: DomainPageProps) {
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-2">
           {domain.icon && <span className="text-4xl">{domain.icon}</span>}
-          <h1 className="text-3xl font-bold text-gray-900">{domain.name}</h1>
+          <h1
+            className="text-3xl font-bold"
+            style={{ color: 'var(--color-text)' }}
+          >
+            {domain.name}
+          </h1>
         </div>
-        {domain.description && <p className="text-gray-600">{domain.description}</p>}
+        {domain.description && (
+          <p style={{ color: 'var(--color-text-secondary)' }}>
+            {domain.description}
+          </p>
+        )}
       </div>
 
-      <h2 className="text-xl font-semibold text-gray-900 mb-4">Parcours disponibles</h2>
+      <h2
+        className="text-xl font-semibold mb-4"
+        style={{ color: 'var(--color-text)' }}
+      >
+        Parcours disponibles
+      </h2>
 
       {domain.packs.length === 0 ? (
         <div className="text-center py-12">
-          <p className="text-gray-500">Aucun parcours disponible dans ce domaine.</p>
+          <p style={{ color: 'var(--color-text-muted)' }}>
+            Aucun parcours disponible dans ce domaine.
+          </p>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">

@@ -65,6 +65,62 @@ export async function getPackWithDisciplines(packId: string) {
 }
 
 /**
+ * Fetches a single pack with all its modules (across all disciplines)
+ */
+export async function getPackWithModules(packId: string) {
+  const pack = await prisma.pack.findFirst({
+    where: {
+      id: packId,
+      status: ContentStatus.PUBLISHED,
+      deletedAt: null,
+    },
+    include: {
+      domain: true,
+      disciplines: {
+        where: {
+          status: ContentStatus.PUBLISHED,
+          deletedAt: null,
+        },
+        orderBy: { order: 'asc' },
+        include: {
+          modules: {
+            where: {
+              status: ContentStatus.PUBLISHED,
+              deletedAt: null,
+            },
+            orderBy: { order: 'asc' },
+            include: {
+              lesson: {
+                select: {
+                  id: true,
+                  practiceType: true,
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  });
+
+  if (!pack) return null;
+
+  // Flatten all modules from all disciplines into a single ordered list
+  const allModules = pack.disciplines.flatMap((discipline) =>
+    discipline.modules.map((module) => ({
+      ...module,
+      disciplineName: discipline.name,
+      disciplineId: discipline.id,
+    }))
+  );
+
+  return {
+    ...pack,
+    modules: allModules,
+  };
+}
+
+/**
  * Fetches a single discipline with its modules
  */
 export async function getDisciplineWithModules(disciplineId: string) {
@@ -120,7 +176,13 @@ export async function getModuleWithLesson(moduleId: string) {
         },
       },
       lesson: {
-        include: {
+        select: {
+          id: true,
+          theoryContent: true,
+          quizThreshold: true,
+          practiceType: true,
+          practiceInstructions: true,
+          mode: true,
           questions: {
             orderBy: { order: 'asc' },
             select: {
@@ -129,7 +191,9 @@ export async function getModuleWithLesson(moduleId: string) {
               questionType: true,
               options: true,
               order: true,
-              // Note: correctAnswer is NOT included for client-side security
+              linkedTheorySection: true,
+              correctAnswer: true,
+              feedback: true,
             },
           },
         },

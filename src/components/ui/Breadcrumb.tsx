@@ -15,24 +15,40 @@ interface BreadcrumbProps {
 export function Breadcrumb({ items }: BreadcrumbProps) {
   return (
     <nav aria-label="Fil d'Ariane" className="mb-6">
-      <ol className="flex flex-wrap items-center gap-1 text-sm text-gray-600">
+      <ol className="flex flex-wrap items-center gap-1 text-sm">
         <li>
-          <Link href="/" className="hover:text-blue-600 transition-colors">
+          <Link
+            href="/"
+            className="transition-colors hover:opacity-80"
+            style={{ color: 'var(--color-text-secondary)' }}
+          >
             Accueil
           </Link>
         </li>
         {items.map((item, index) => (
           <Fragment key={index}>
-            <li aria-hidden="true" className="text-gray-400">
+            <li
+              aria-hidden="true"
+              style={{ color: 'var(--color-text-muted)' }}
+            >
               /
             </li>
             <li>
               {item.href ? (
-                <Link href={item.href} className="hover:text-blue-600 transition-colors">
+                <Link
+                  href={item.href}
+                  className="transition-colors hover:opacity-80"
+                  style={{ color: 'var(--color-text-secondary)' }}
+                >
                   {item.label}
                 </Link>
               ) : (
-                <span className="text-gray-900 font-medium">{item.label}</span>
+                <span
+                  className="font-medium"
+                  style={{ color: 'var(--color-text)' }}
+                >
+                  {item.label}
+                </span>
               )}
             </li>
           </Fragment>

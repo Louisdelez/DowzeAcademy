@@ -16,8 +16,12 @@ export function ErrorDisplay({
   return (
     <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
       <div className="text-4xl mb-4">❌</div>
-      <h3 className="text-xl font-semibold text-gray-900 mb-2">{title}</h3>
-      <p className="text-gray-600 mb-6 max-w-md">{message}</p>
+      <h3 className="text-xl font-semibold mb-2" style={{ color: 'var(--color-text)' }}>
+        {title}
+      </h3>
+      <p className="mb-6 max-w-md" style={{ color: 'var(--color-text-secondary)' }}>
+        {message}
+      </p>
       {onRetry && <RetryButton onRetry={onRetry} />}
     </div>
   );

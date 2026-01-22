@@ -19,16 +19,26 @@ export async function getOrCreateProgression(userId: string, moduleId: string) {
   });
 
   if (!progression) {
-    // Check if module exists and get its position
+    // Check if module exists and get its position in the pack
     const module = await prisma.module.findUnique({
       where: { id: moduleId },
       include: {
         discipline: {
           include: {
-            modules: {
-              where: { deletedAt: null },
-              orderBy: { order: 'asc' },
-              select: { id: true, order: true },
+            pack: {
+              include: {
+                disciplines: {
+                  where: { deletedAt: null },
+                  orderBy: { order: 'asc' },
+                  include: {
+                    modules: {
+                      where: { deletedAt: null },
+                      orderBy: { order: 'asc' },
+                      select: { id: true, order: true },
+                    },
+                  },
+                },
+              },
             },
           },
         },
@@ -37,9 +47,12 @@ export async function getOrCreateProgression(userId: string, moduleId: string) {
 
     if (!module) return null;
 
-    // Determine initial status
-    const isFirstModule = module.discipline.modules[0]?.id === moduleId;
-    const initialStatus = isFirstModule ? ModuleProgressStatus.AVAILABLE : ModuleProgressStatus.LOCKED;
+    // Determine initial status - check if it's the first module in the entire pack
+    const allModulesInPack = module.discipline.pack.disciplines.flatMap((d) => d.modules);
+    const isFirstModuleInPack = allModulesInPack[0]?.id === moduleId;
+    const initialStatus = isFirstModuleInPack
+      ? ModuleProgressStatus.AVAILABLE
+      : ModuleProgressStatus.LOCKED;
 
     progression = await prisma.userProgression.create({
       data: {
@@ -138,6 +151,20 @@ export async function markPracticeCompleted(userId: string, moduleId: string) {
         include: {
           discipline: {
             include: {
+              pack: {
+                include: {
+                  disciplines: {
+                    where: { deletedAt: null },
+                    orderBy: { order: 'asc' },
+                    include: {
+                      modules: {
+                        where: { deletedAt: null },
+                        orderBy: { order: 'asc' },
+                      },
+                    },
+                  },
+                },
+              },
               modules: {
                 where: { deletedAt: null },
                 orderBy: { order: 'asc' },
@@ -149,14 +176,14 @@ export async function markPracticeCompleted(userId: string, moduleId: string) {
     },
   });
 
-  // Unlock next module
+  // Unlock next module (within discipline or across disciplines in pack)
   await unlockNextModule(userId, updatedProgression.module);
 
   return updatedProgression;
 }
 
 /**
- * Unlocks the next module in sequence
+ * Unlocks the next module in sequence (within discipline or across disciplines in pack)
  */
 async function unlockNextModule(
   userId: string,
@@ -164,13 +191,34 @@ async function unlockNextModule(
     id: string;
     order: number;
     discipline: {
+      id: string;
       modules: { id: string; order: number }[];
+      pack: {
+        disciplines: {
+          id: string;
+          order: number;
+          modules: { id: string; order: number }[];
+        }[];
+      };
     };
   }
 ) {
-  const modules = completedModule.discipline.modules;
-  const currentIndex = modules.findIndex((m) => m.id === completedModule.id);
-  const nextModule = modules[currentIndex + 1];
+  const disciplineModules = completedModule.discipline.modules;
+  const currentIndex = disciplineModules.findIndex((m) => m.id === completedModule.id);
+  let nextModule = disciplineModules[currentIndex + 1];
+
+  // If no next module in current discipline, check next discipline in pack
+  if (!nextModule) {
+    const disciplines = completedModule.discipline.pack.disciplines;
+    const currentDisciplineIndex = disciplines.findIndex(
+      (d) => d.id === completedModule.discipline.id
+    );
+    const nextDiscipline = disciplines[currentDisciplineIndex + 1];
+
+    if (nextDiscipline && nextDiscipline.modules.length > 0) {
+      nextModule = nextDiscipline.modules[0];
+    }
+  }
 
   if (!nextModule) return;
 
@@ -268,23 +316,36 @@ export async function getModuleStatus(
   });
 
   if (!progression) {
-    // Check if it's the first module
+    // Check if it's the first module in the pack
     const module = await prisma.module.findUnique({
       where: { id: moduleId },
       include: {
         discipline: {
           include: {
-            modules: {
-              where: { deletedAt: null },
-              orderBy: { order: 'asc' },
-              take: 1,
+            pack: {
+              include: {
+                disciplines: {
+                  where: { deletedAt: null },
+                  orderBy: { order: 'asc' },
+                  include: {
+                    modules: {
+                      where: { deletedAt: null },
+                      orderBy: { order: 'asc' },
+                      take: 1,
+                      select: { id: true },
+                    },
+                  },
+                },
+              },
             },
           },
         },
       },
     });
 
-    if (module?.discipline.modules[0]?.id === moduleId) {
+    // Find the first module in the entire pack
+    const firstModuleInPack = module?.discipline.pack.disciplines[0]?.modules[0];
+    if (firstModuleInPack?.id === moduleId) {
       return ModuleProgressStatus.AVAILABLE;
     }
 
@@ -292,4 +353,86 @@ export async function getModuleStatus(
   }
 
   return progression.status as ModuleProgressStatus;
+}
+
+/**
+ * Gets all progressions for a user in a specific pack (all modules across all disciplines)
+ */
+export async function getPackProgressions(userId: string, packId: string) {
+  return prisma.userProgression.findMany({
+    where: {
+      userId,
+      module: {
+        discipline: {
+          packId,
+        },
+        deletedAt: null,
+      },
+    },
+    include: {
+      module: {
+        include: {
+          discipline: true,
+        },
+      },
+    },
+  });
+}
+
+/**
+ * Calculates progress stats for a pack (all modules across all disciplines)
+ */
+export async function calculatePackProgress(
+  userId: string,
+  packId: string
+): Promise<ProgressStats> {
+  const pack = await prisma.pack.findUnique({
+    where: { id: packId },
+    include: {
+      disciplines: {
+        where: { deletedAt: null },
+        include: {
+          modules: {
+            where: { deletedAt: null },
+            select: { id: true },
+          },
+        },
+      },
+    },
+  });
+
+  if (!pack) {
+    return { total: 0, completed: 0, inProgress: 0, available: 0, locked: 0, percentage: 0 };
+  }
+
+  const total = pack.disciplines.reduce((sum, d) => sum + d.modules.length, 0);
+  const progressions = await getPackProgressions(userId, packId);
+
+  const stats = {
+    total,
+    completed: 0,
+    inProgress: 0,
+    available: 0,
+    locked: total,
+    percentage: 0,
+  };
+
+  for (const prog of progressions) {
+    stats.locked--;
+    switch (prog.status) {
+      case ModuleProgressStatus.COMPLETED:
+        stats.completed++;
+        break;
+      case ModuleProgressStatus.IN_PROGRESS:
+        stats.inProgress++;
+        break;
+      case ModuleProgressStatus.AVAILABLE:
+        stats.available++;
+        break;
+    }
+  }
+
+  stats.percentage = total > 0 ? Math.round((stats.completed / total) * 100) : 0;
+
+  return stats;
 }

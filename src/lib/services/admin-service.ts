@@ -350,6 +350,7 @@ export async function updateLesson(
     quizThreshold: number;
     practiceType: string;
     practiceInstructions: string;
+    mode?: string;
   }
 ) {
   // Upsert lesson
@@ -360,6 +361,7 @@ export async function updateLesson(
       quizThreshold: data.quizThreshold,
       practiceType: data.practiceType as any,
       practiceInstructions: data.practiceInstructions,
+      ...(data.mode && { mode: data.mode as any }),
     },
     create: {
       moduleId,
@@ -367,6 +369,7 @@ export async function updateLesson(
       quizThreshold: data.quizThreshold,
       practiceType: data.practiceType as any,
       practiceInstructions: data.practiceInstructions,
+      mode: (data.mode as any) || 'LEGACY',
     },
   });
 }
@@ -380,6 +383,7 @@ export async function updateQuizQuestions(
     options: any;
     correctAnswer: any;
     feedback?: string;
+    linkedTheorySection?: string;
     order: number;
   }>
 ) {
@@ -394,6 +398,7 @@ export async function updateQuizQuestions(
       options: q.options,
       correctAnswer: q.correctAnswer,
       feedback: q.feedback,
+      linkedTheorySection: q.linkedTheorySection,
       order: q.order,
     })),
   });

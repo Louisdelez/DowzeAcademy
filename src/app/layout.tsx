@@ -22,14 +22,34 @@ export const viewport: Viewport = {
   maximumScale: 1,
 };
 
+// Anti-flash script: applies theme before first paint to prevent FOUC
+const themeInitScript = `
+(function() {
+  try {
+    var theme = localStorage.getItem('dowze-academy-theme');
+    if (theme && ['latte', 'frappe', 'macchiato', 'mocha'].includes(theme)) {
+      document.documentElement.setAttribute('data-theme', theme);
+      if (theme !== 'latte') {
+        document.documentElement.classList.add('dark');
+      }
+    }
+  } catch (e) {}
+})();
+`;
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="fr">
-      <body className={`${inter.variable} font-sans antialiased bg-gray-50 text-gray-900`}>
+    <html lang="fr" suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{ __html: themeInitScript }}
+        />
+      </head>
+      <body className={`${inter.variable} font-sans antialiased`}>
         <Providers>{children}</Providers>
       </body>
     </html>

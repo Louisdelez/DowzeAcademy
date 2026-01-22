@@ -20,13 +20,20 @@ export function StalenessIndicator({
   }
 
   return (
-    <div className="flex items-center gap-2 text-amber-600 bg-amber-50 px-3 py-2 rounded-lg text-sm">
+    <div
+      className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm"
+      style={{
+        color: 'var(--ctp-yellow)',
+        backgroundColor: 'color-mix(in srgb, var(--ctp-yellow) 15%, transparent)',
+      }}
+    >
       <span>⚠️</span>
       <span>Ces données peuvent ne pas être à jour.</span>
       {onRefresh && (
         <button
           onClick={onRefresh}
           className="underline hover:no-underline font-medium"
+          style={{ color: 'var(--ctp-yellow)' }}
         >
           Actualiser
         </button>

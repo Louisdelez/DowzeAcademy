@@ -1,6 +1,6 @@
 import { Pool } from 'pg';
 import { PrismaPg } from '@prisma/adapter-pg';
-import { PrismaClient, ContentStatus, PracticeType, QuestionType } from '../src/generated/prisma';
+import { PrismaClient, ContentStatus, PracticeType, QuestionType, LessonMode } from '../src/generated/prisma';
 import { hash } from 'bcryptjs';
 import 'dotenv/config';
 
@@ -149,6 +149,7 @@ Le jungler est un rôle unique dans League of Legends. Contrairement aux autres 
           correctAnswer: 'b',
           feedback:
             'Le jungler parcourt la jungle pour farmer les monstres, aider les lanes par des ganks, et contrôler les objectifs comme le Dragon.',
+          linkedTheorySection: "Qu'est-ce qu'un Jungler ?",
         },
         {
           text: 'Quels sont les objectifs majeurs contrôlés par le jungler ?',
@@ -162,6 +163,7 @@ Le jungler est un rôle unique dans League of Legends. Contrairement aux autres 
           correctAnswer: ['a', 'b', 'd'],
           feedback:
             'Le jungler est principalement responsable du Dragon, du Baron Nashor et du Rift Herald.',
+          linkedTheorySection: "Qu'est-ce qu'un Jungler ?",
         },
       ],
     },
@@ -220,6 +222,7 @@ Le jungler est un rôle unique dans League of Legends. Contrairement aux autres 
           ],
           correctAnswer: 'b',
           feedback: 'Le Blue Buff (Sentinelle) donne la régénération de mana et la réduction des cooldowns.',
+          linkedTheorySection: 'Buffs',
         },
         {
           text: 'Combien de temps durent les buffs Red et Blue ?',
@@ -227,6 +230,7 @@ Le jungler est un rôle unique dans League of Legends. Contrairement aux autres 
           options: null,
           correctAnswer: '2 minutes',
           feedback: 'Les deux buffs durent 2 minutes une fois récupérés.',
+          linkedTheorySection: 'Buffs',
         },
       ],
     },
@@ -281,6 +285,7 @@ Red → Enemy Blue (avec ward) → Gank mid ou retour safe
           correctAnswer: 'b',
           feedback:
             'En commençant côté bleu, on démarre généralement par le Red Buff pour avoir le slow et les dégâts bonus pour le clear.',
+          linkedTheorySection: 'Route standard (Full Clear)',
         },
         {
           text: 'Pourquoi le kiting est-il important dans la jungle ?',
@@ -294,6 +299,7 @@ Red → Enemy Blue (avec ward) → Gank mid ou retour safe
           correctAnswer: 'b',
           feedback:
             'Le kiting permet de réduire les dégâts reçus en bougeant entre les attaques, ce qui vous garde en meilleure santé.',
+          linkedTheorySection: "Conseils d'optimisation",
         },
       ],
     },
@@ -352,6 +358,7 @@ Simplement montrer votre présence pour créer de la pression
           correctAnswer: 'b',
           feedback:
             "Ganker quand l'ennemi est push offre plus d'espace pour le poursuivre et réduit son temps de réaction.",
+          linkedTheorySection: 'Quand ganker ?',
         },
         {
           text: "Qu'est-ce qu'un counter-gank ?",
@@ -365,6 +372,7 @@ Simplement montrer votre présence pour créer de la pression
           correctAnswer: 'b',
           feedback:
             "Le counter-gank consiste à anticiper où le jungler ennemi va ganker et à arriver au même moment pour retourner la situation.",
+          linkedTheorySection: 'Types de ganks',
         },
       ],
     },
@@ -421,6 +429,7 @@ Après 4 dragons, vous obtenez une âme puissante !
           options: null,
           correctAnswer: '5:00',
           feedback: 'Le premier dragon spawn à 5:00 dans la partie.',
+          linkedTheorySection: 'Les Dragons',
         },
         {
           text: "Combien de dragons faut-il pour obtenir l'Âme ?",
@@ -433,6 +442,7 @@ Après 4 dragons, vous obtenez une âme puissante !
           ],
           correctAnswer: 'b',
           feedback: "Il faut 4 dragons pour obtenir l'Âme du Dragon.",
+          linkedTheorySection: "L'Âme du Dragon",
         },
         {
           text: 'Quels sont les avantages du buff Baron ?',
@@ -446,6 +456,7 @@ Après 4 dragons, vous obtenez une âme puissante !
           correctAnswer: ['a', 'c'],
           feedback:
             'Le buff Baron renforce vos minions et aide grandement au push des tours, ce qui permet de prendre des objectifs.',
+          linkedTheorySection: 'Baron Nashor',
         },
       ],
     },
@@ -472,6 +483,7 @@ Après 4 dragons, vous obtenez une âme puissante !
         quizThreshold: 70,
         practiceType: moduleData.practiceType,
         practiceInstructions: moduleData.practiceInstructions,
+        mode: LessonMode.SLIDES,
       },
     });
 
@@ -487,6 +499,7 @@ Après 4 dragons, vous obtenez une âme puissante !
           correctAnswer: q.correctAnswer,
           feedback: q.feedback,
           order: j,
+          linkedTheorySection: q.linkedTheorySection,
         },
       });
     }

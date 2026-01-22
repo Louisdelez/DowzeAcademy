@@ -8,6 +8,12 @@ interface ProgressBarProps {
   color?: 'blue' | 'green' | 'yellow';
 }
 
+const colorStyles: Record<string, string> = {
+  blue: 'var(--ctp-blue)',
+  green: 'var(--ctp-green)',
+  yellow: 'var(--ctp-yellow)',
+};
+
 export function ProgressBar({
   value,
   max = 100,
@@ -23,18 +29,18 @@ export function ProgressBar({
     lg: 'h-4',
   };
 
-  const colorStyles = {
-    blue: 'bg-blue-600',
-    green: 'bg-green-600',
-    yellow: 'bg-yellow-500',
-  };
-
   return (
     <div className="w-full">
-      <div className={`w-full bg-gray-200 rounded-full overflow-hidden ${sizeStyles[size]}`}>
+      <div
+        className={`w-full rounded-full overflow-hidden ${sizeStyles[size]}`}
+        style={{ backgroundColor: 'var(--color-bg-tertiary)' }}
+      >
         <div
-          className={`${colorStyles[color]} ${sizeStyles[size]} rounded-full transition-all duration-300`}
-          style={{ width: `${percentage}%` }}
+          className={`${sizeStyles[size]} rounded-full transition-all duration-300`}
+          style={{
+            width: `${percentage}%`,
+            backgroundColor: colorStyles[color],
+          }}
           role="progressbar"
           aria-valuenow={value}
           aria-valuemin={0}
@@ -42,7 +48,9 @@ export function ProgressBar({
         />
       </div>
       {showLabel && (
-        <p className="text-xs text-gray-500 mt-1 text-right">{Math.round(percentage)}%</p>
+        <p className="text-xs mt-1 text-right" style={{ color: 'var(--color-text-muted)' }}>
+          {Math.round(percentage)}%
+        </p>
       )}
     </div>
   );

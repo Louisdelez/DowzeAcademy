@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation';
-import { getPackWithDisciplines } from '@/lib/services/content-service';
-import { DisciplineCard } from '@/components/cards/DisciplineCard';
+import { getPackWithModules } from '@/lib/services/content-service';
 import { Breadcrumb } from '@/components/ui/Breadcrumb';
+import { PackModules } from './PackModules';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,7 +11,7 @@ interface PackPageProps {
 
 export async function generateMetadata({ params }: PackPageProps) {
   const { id } = await params;
-  const pack = await getPackWithDisciplines(id);
+  const pack = await getPackWithModules(id);
   return {
     title: pack?.name || 'Pack',
   };
@@ -19,7 +19,7 @@ export async function generateMetadata({ params }: PackPageProps) {
 
 export default async function PackPage({ params }: PackPageProps) {
   const { id } = await params;
-  const pack = await getPackWithDisciplines(id);
+  const pack = await getPackWithModules(id);
 
   if (!pack) {
     notFound();
@@ -35,22 +35,34 @@ export default async function PackPage({ params }: PackPageProps) {
       <Breadcrumb items={breadcrumbItems} />
 
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">{pack.name}</h1>
-        {pack.description && <p className="text-gray-600">{pack.description}</p>}
+        <h1
+          className="text-3xl font-bold mb-2"
+          style={{ color: 'var(--color-text)' }}
+        >
+          {pack.name}
+        </h1>
+        {pack.description && (
+          <p style={{ color: 'var(--color-text-secondary)' }}>
+            {pack.description}
+          </p>
+        )}
       </div>
 
-      <h2 className="text-xl font-semibold text-gray-900 mb-4">Disciplines</h2>
+      <h2
+        className="text-xl font-semibold mb-4"
+        style={{ color: 'var(--color-text)' }}
+      >
+        Modules
+      </h2>
 
-      {pack.disciplines.length === 0 ? (
+      {pack.modules.length === 0 ? (
         <div className="text-center py-12">
-          <p className="text-gray-500">Aucune discipline disponible dans ce parcours.</p>
+          <p style={{ color: 'var(--color-text-muted)' }}>
+            Aucun module disponible dans ce parcours.
+          </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-          {pack.disciplines.map((discipline) => (
-            <DisciplineCard key={discipline.id} discipline={discipline} />
-          ))}
-        </div>
+        <PackModules packId={id} modules={pack.modules} />
       )}
     </div>
   );

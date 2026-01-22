@@ -12,11 +12,18 @@ export interface QuizQuestion {
   correctAnswer: string | string[];
   feedback: string;
   order: number;
+  linkedTheorySection?: string | null;
+}
+
+interface TheorySection {
+  id: string;
+  title: string;
 }
 
 interface QuizQuestionEditorProps {
   question: QuizQuestion;
   questionIndex: number;
+  theorySections?: TheorySection[];
   onUpdate: (updates: Partial<QuizQuestion>) => void;
   onRemove: () => void;
 }
@@ -30,6 +37,7 @@ const QUESTION_TYPES = [
 export function QuizQuestionEditor({
   question,
   questionIndex,
+  theorySections = [],
   onUpdate,
   onRemove,
 }: QuizQuestionEditorProps) {
@@ -187,6 +195,34 @@ export function QuizQuestionEditor({
           onChange={(e) => onUpdate({ feedback: e.target.value })}
           placeholder="Explication ou conseil..."
         />
+
+        {/* Linked Theory Section (for slides mode) */}
+        {theorySections.length > 0 && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Section de théorie liée (pour révision)
+            </label>
+            <select
+              value={question.linkedTheorySection || ''}
+              onChange={(e) =>
+                onUpdate({
+                  linkedTheorySection: e.target.value || null,
+                })
+              }
+              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Aucune section liée</option>
+              {theorySections.map((section) => (
+                <option key={section.id} value={section.title}>
+                  {section.title}
+                </option>
+              ))}
+            </select>
+            <p className="text-sm text-gray-500 mt-1">
+              En mode slides, l&apos;apprenant pourra revoir cette section s&apos;il répond mal.
+            </p>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

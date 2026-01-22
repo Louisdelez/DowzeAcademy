@@ -3,13 +3,9 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { TheoryViewer } from '@/components/lesson/TheoryViewer';
-import { QuizContainer } from '@/components/lesson/QuizContainer';
-import { PracticeInstructions } from '@/components/lesson/PracticeInstructions';
-import { PracticeCompletion } from '@/components/lesson/PracticeCompletion';
-import { Badge } from '@/components/ui/Badge';
+import { GuidedModuleFlow } from '@/components/lesson/GuidedModuleFlow';
 import { Button } from '@/components/ui/Button';
-import type { PracticeType, QuestionType } from '@/types/models';
+import type { PracticeType, QuestionType, LessonMode } from '@/types/models';
 
 interface Question {
   id: string;
@@ -17,6 +13,9 @@ interface Question {
   questionType: QuestionType;
   options: { id: string; text: string }[] | null;
   order: number;
+  linkedTheorySection: string | null;
+  correctAnswer: string;
+  explanation: string | null;
 }
 
 interface Lesson {
@@ -25,11 +24,13 @@ interface Lesson {
   quizThreshold: number;
   practiceType: PracticeType;
   practiceInstructions: string;
+  mode: LessonMode;
   questions: Question[];
 }
 
 interface ModuleContentProps {
   moduleId: string;
+  moduleName: string;
   disciplineId?: string;
   lesson: Lesson;
 }
@@ -42,14 +43,9 @@ interface ProgressionState {
   completedAt: string | null;
 }
 
-type Tab = 'theory' | 'quiz' | 'practice';
-
-export function ModuleContent({ moduleId, disciplineId, lesson }: ModuleContentProps) {
-  const { data: session, status } = useSession();
+export function ModuleContent({ moduleId, moduleName, lesson }: ModuleContentProps) {
+  const { status } = useSession();
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<Tab>('theory');
-  const [quizPassed, setQuizPassed] = useState(false);
-  const [practiceCompleted, setPracticeCompleted] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isLocked, setIsLocked] = useState(false);
   const [progression, setProgression] = useState<ProgressionState | null>(null);
@@ -70,17 +66,6 @@ export function ModuleContent({ moduleId, disciplineId, lesson }: ModuleContentP
             // Check if module is locked
             if (data.status === 'LOCKED') {
               setIsLocked(true);
-            } else {
-              // Restore state from progression
-              if (data.quizPassedAt) {
-                setQuizPassed(true);
-              }
-              if (data.practiceCompletedAt) {
-                setPracticeCompleted(true);
-              }
-              if (data.completedAt) {
-                setActiveTab('practice');
-              }
             }
           } else if (response.status === 404) {
             // Module locked or not found
@@ -98,39 +83,40 @@ export function ModuleContent({ moduleId, disciplineId, lesson }: ModuleContentP
     }
   }, [moduleId, status]);
 
-  const handleQuizPassed = () => {
-    setQuizPassed(true);
-    setActiveTab('practice');
-  };
-
-  const handlePracticeComplete = () => {
-    setPracticeCompleted(true);
-  };
-
-  const tabs: { id: Tab; label: string; locked: boolean }[] = [
-    { id: 'theory', label: 'Théorie', locked: false },
-    { id: 'quiz', label: 'Quiz', locked: false },
-    { id: 'practice', label: 'Pratique', locked: !quizPassed },
-  ];
-
   if (status === 'loading' || isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+        <div
+          className="animate-spin rounded-full h-8 w-8 border-b-2"
+          style={{ borderColor: 'var(--color-primary)' }}
+        />
       </div>
     );
   }
 
   if (status === 'unauthenticated') {
     return (
-      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
-        <h3 className="text-lg font-semibold text-yellow-800 mb-2">Connexion requise</h3>
-        <p className="text-yellow-700">
+      <div
+        className="rounded-lg p-6"
+        style={{
+          backgroundColor: 'color-mix(in srgb, var(--ctp-yellow) 15%, transparent)',
+          borderWidth: '1px',
+          borderColor: 'var(--ctp-yellow)',
+        }}
+      >
+        <h3 className="text-lg font-semibold mb-2" style={{ color: 'var(--ctp-yellow)' }}>
+          Connexion requise
+        </h3>
+        <p style={{ color: 'var(--ctp-yellow)' }}>
           Vous devez être connecté pour accéder au contenu du module et suivre votre progression.
         </p>
         <a
           href="/login"
-          className="inline-block mt-4 px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors"
+          className="inline-block mt-4 px-4 py-2 rounded-lg transition-colors"
+          style={{
+            backgroundColor: 'var(--ctp-yellow)',
+            color: 'var(--color-bg)',
+          }}
         >
           Se connecter
         </a>
@@ -140,16 +126,22 @@ export function ModuleContent({ moduleId, disciplineId, lesson }: ModuleContentP
 
   if (isLocked) {
     return (
-      <div className="bg-gray-50 border border-gray-200 rounded-lg p-8 text-center">
+      <div
+        className="rounded-lg p-8 text-center"
+        style={{
+          backgroundColor: 'var(--color-bg-tertiary)',
+          borderWidth: '1px',
+          borderColor: 'var(--color-border)',
+        }}
+      >
         <span className="text-5xl mb-4 block">🔒</span>
-        <h3 className="text-xl font-bold text-gray-800 mb-2">Module verrouillé</h3>
-        <p className="text-gray-600 mb-6">
+        <h3 className="text-xl font-bold mb-2" style={{ color: 'var(--color-text)' }}>
+          Module verrouillé
+        </h3>
+        <p className="mb-6" style={{ color: 'var(--color-text-secondary)' }}>
           Vous devez compléter les modules précédents pour débloquer celui-ci.
         </p>
-        <Button
-          onClick={() => router.back()}
-          variant="outline"
-        >
+        <Button onClick={() => router.back()} variant="outline">
           Retour à la discipline
         </Button>
       </div>
@@ -157,99 +149,17 @@ export function ModuleContent({ moduleId, disciplineId, lesson }: ModuleContentP
   }
 
   return (
-    <div className="space-y-6">
-      {/* Tab navigation */}
-      <div className="border-b border-gray-200">
-        <nav className="flex gap-4" aria-label="Sections du module">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => !tab.locked && setActiveTab(tab.id)}
-              disabled={tab.locked}
-              className={`
-                relative pb-4 px-1 text-sm font-medium transition-colors
-                ${
-                  activeTab === tab.id
-                    ? 'text-blue-600 border-b-2 border-blue-600'
-                    : tab.locked
-                      ? 'text-gray-400 cursor-not-allowed'
-                      : 'text-gray-500 hover:text-gray-700'
-                }
-              `}
-            >
-              <span className="flex items-center gap-2">
-                {tab.label}
-                {tab.id === 'quiz' && quizPassed && (
-                  <Badge variant="success" size="sm">
-                    Réussi
-                  </Badge>
-                )}
-                {tab.id === 'practice' && practiceCompleted && (
-                  <Badge variant="success" size="sm">
-                    Terminé
-                  </Badge>
-                )}
-                {tab.locked && <span className="text-xs">🔒</span>}
-              </span>
-            </button>
-          ))}
-        </nav>
-      </div>
-
-      {/* Tab content */}
-      <div className="min-h-[400px]">
-        {activeTab === 'theory' && <TheoryViewer content={lesson.theoryContent} />}
-
-        {activeTab === 'quiz' && (
-          quizPassed ? (
-            <div className="bg-green-50 border border-green-200 rounded-lg p-6 text-center">
-              <span className="text-4xl mb-2 block">✅</span>
-              <h3 className="text-xl font-bold text-green-800 mb-2">Quiz réussi !</h3>
-              <p className="text-green-700 mb-4">
-                Vous avez déjà réussi ce quiz. Passez à la section pratique.
-              </p>
-              <Button onClick={() => setActiveTab('practice')}>
-                Aller à la pratique
-              </Button>
-            </div>
-          ) : (
-            <QuizContainer
-              questions={lesson.questions}
-              quizThreshold={lesson.quizThreshold}
-              moduleId={moduleId}
-              onQuizPassed={handleQuizPassed}
-            />
-          )
-        )}
-
-        {activeTab === 'practice' && (
-          <div className="space-y-6">
-            <PracticeInstructions
-              practiceType={lesson.practiceType}
-              instructions={lesson.practiceInstructions}
-            />
-
-            {!practiceCompleted ? (
-              <PracticeCompletion moduleId={moduleId} onComplete={handlePracticeComplete} />
-            ) : (
-              <div className="bg-green-50 border border-green-200 rounded-lg p-6 text-center">
-                <span className="text-4xl mb-2 block">🎉</span>
-                <h3 className="text-xl font-bold text-green-800 mb-2">Module terminé !</h3>
-                <p className="text-green-700">
-                  Félicitations ! Vous avez complété ce module avec succès.
-                </p>
-                <Button
-                  onClick={() => router.back()}
-                  className="mt-4"
-                  variant="outline"
-                >
-                  Retour à la discipline
-                </Button>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-    </div>
+    <GuidedModuleFlow
+      moduleId={moduleId}
+      moduleName={moduleName}
+      theoryContent={lesson.theoryContent}
+      questions={lesson.questions}
+      quizThreshold={lesson.quizThreshold}
+      practiceType={lesson.practiceType}
+      practiceInstructions={lesson.practiceInstructions}
+      initialQuizPassed={!!progression?.quizPassedAt}
+      initialPracticeCompleted={!!progression?.practiceCompletedAt}
+      mode={lesson.mode}
+    />
   );
 }

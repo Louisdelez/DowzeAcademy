@@ -123,11 +123,18 @@ export function QuizContainer({
 
   return (
     <div className="space-y-6">
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <p className="text-blue-800">
+      <div
+        className="rounded-lg p-4"
+        style={{
+          backgroundColor: 'color-mix(in srgb, var(--ctp-blue) 15%, transparent)',
+          borderWidth: '1px',
+          borderColor: 'var(--ctp-blue)',
+        }}
+      >
+        <p style={{ color: 'var(--ctp-blue)' }}>
           <strong>Seuil de réussite :</strong> {quizThreshold}%
         </p>
-        <p className="text-blue-700 text-sm mt-1">
+        <p className="text-sm mt-1" style={{ color: 'var(--ctp-blue)' }}>
           Répondez à toutes les questions puis validez vos réponses.
         </p>
       </div>
@@ -147,8 +154,15 @@ export function QuizContainer({
       </div>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <p className="text-red-700">{error}</p>
+        <div
+          className="rounded-lg p-4"
+          style={{
+            backgroundColor: 'color-mix(in srgb, var(--ctp-red) 15%, transparent)',
+            borderWidth: '1px',
+            borderColor: 'var(--ctp-red)',
+          }}
+        >
+          <p style={{ color: 'var(--ctp-red)' }}>{error}</p>
         </div>
       )}
 

@@ -2,6 +2,7 @@
 
 import { SessionProvider } from 'next-auth/react';
 import { QueryProvider } from '@/lib/providers/query-provider';
+import { ThemeProvider } from '@/lib/theme/ThemeProvider';
 import { type ReactNode } from 'react';
 
 interface ProvidersProps {
@@ -10,8 +11,10 @@ interface ProvidersProps {
 
 export function Providers({ children }: ProvidersProps) {
   return (
-    <SessionProvider>
-      <QueryProvider>{children}</QueryProvider>
-    </SessionProvider>
+    <ThemeProvider>
+      <SessionProvider>
+        <QueryProvider>{children}</QueryProvider>
+      </SessionProvider>
+    </ThemeProvider>
   );
 }

@@ -54,16 +54,36 @@ export function QuizQuestion({
     }
   };
 
-  const feedbackStyles = showFeedback
-    ? isCorrect
-      ? 'border-green-500 bg-green-50'
-      : 'border-red-500 bg-red-50'
-    : '';
+  const getFeedbackStyles = () => {
+    if (!showFeedback) {
+      return {
+        backgroundColor: 'var(--color-bg-tertiary)',
+        borderColor: 'var(--color-border)',
+      };
+    }
+    return isCorrect
+      ? {
+          backgroundColor: 'color-mix(in srgb, var(--ctp-green) 15%, transparent)',
+          borderColor: 'var(--ctp-green)',
+        }
+      : {
+          backgroundColor: 'color-mix(in srgb, var(--ctp-red) 15%, transparent)',
+          borderColor: 'var(--ctp-red)',
+        };
+  };
 
   return (
-    <div className={`p-4 border rounded-lg ${feedbackStyles || 'border-gray-200 bg-white'}`}>
-      <p className="font-medium text-gray-900 mb-4">
-        <span className="text-blue-600 mr-2">Q{questionNumber}.</span>
+    <div
+      className="p-4 rounded-lg"
+      style={{
+        ...getFeedbackStyles(),
+        borderWidth: '1px',
+      }}
+    >
+      <p className="font-medium mb-4" style={{ color: 'var(--color-text)' }}>
+        <span className="mr-2" style={{ color: 'var(--color-primary)' }}>
+          Q{questionNumber}.
+        </span>
         {questionText}
       </p>
 
@@ -74,9 +94,15 @@ export function QuizQuestion({
             return (
               <label
                 key={option.id}
-                className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors
-                  ${isSelected ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'}
+                className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors
                   ${disabled ? 'cursor-not-allowed opacity-75' : ''}`}
+                style={{
+                  backgroundColor: isSelected
+                    ? 'color-mix(in srgb, var(--color-primary) 15%, transparent)'
+                    : 'var(--color-bg-elevated)',
+                  borderWidth: '1px',
+                  borderColor: isSelected ? 'var(--color-primary)' : 'var(--color-border)',
+                }}
               >
                 <input
                   type="radio"
@@ -84,9 +110,10 @@ export function QuizQuestion({
                   checked={isSelected}
                   onChange={() => handleSingleChoice(option.id)}
                   disabled={disabled}
-                  className="w-4 h-4 text-blue-600"
+                  className="w-4 h-4"
+                  style={{ accentColor: 'var(--color-primary)' }}
                 />
-                <span className="text-gray-700">{option.text}</span>
+                <span style={{ color: 'var(--color-text-secondary)' }}>{option.text}</span>
               </label>
             );
           })}
@@ -95,24 +122,33 @@ export function QuizQuestion({
 
       {questionType === 'MULTIPLE_CHOICE' && options && (
         <div className="space-y-2">
-          <p className="text-sm text-gray-500 mb-2">Sélectionnez toutes les réponses correctes</p>
+          <p className="text-sm mb-2" style={{ color: 'var(--color-text-muted)' }}>
+            Sélectionnez toutes les réponses correctes
+          </p>
           {options.map((option) => {
             const isSelected = Array.isArray(selectedAnswer) && selectedAnswer.includes(option.id);
             return (
               <label
                 key={option.id}
-                className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors
-                  ${isSelected ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'}
+                className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors
                   ${disabled ? 'cursor-not-allowed opacity-75' : ''}`}
+                style={{
+                  backgroundColor: isSelected
+                    ? 'color-mix(in srgb, var(--color-primary) 15%, transparent)'
+                    : 'var(--color-bg-elevated)',
+                  borderWidth: '1px',
+                  borderColor: isSelected ? 'var(--color-primary)' : 'var(--color-border)',
+                }}
               >
                 <input
                   type="checkbox"
                   checked={isSelected}
                   onChange={() => handleMultipleChoice(option.id)}
                   disabled={disabled}
-                  className="w-4 h-4 text-blue-600 rounded"
+                  className="w-4 h-4 rounded"
+                  style={{ accentColor: 'var(--color-primary)' }}
                 />
-                <span className="text-gray-700">{option.text}</span>
+                <span style={{ color: 'var(--color-text-secondary)' }}>{option.text}</span>
               </label>
             );
           })}

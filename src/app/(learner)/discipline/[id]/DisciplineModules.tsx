@@ -60,7 +60,8 @@ export function DisciplineModules({ disciplineId, modules }: DisciplineModulesPr
         {modules.map((module) => (
           <div
             key={module.id}
-            className="h-24 bg-gray-100 rounded-lg animate-pulse"
+            className="h-24 rounded-lg animate-pulse"
+            style={{ backgroundColor: 'var(--color-bg-tertiary)' }}
           />
         ))}
       </div>
@@ -76,16 +77,39 @@ export function DisciplineModules({ disciplineId, modules }: DisciplineModulesPr
       />
 
       {progression && status === 'authenticated' && (
-        <div className="bg-white rounded-lg p-4 border border-gray-200">
-          <h3 className="text-sm font-medium text-gray-700 mb-2">Votre progression</h3>
+        <div
+          className="rounded-lg p-4"
+          style={{
+            backgroundColor: 'var(--color-bg-elevated)',
+            borderWidth: '1px',
+            borderColor: 'var(--color-border)',
+          }}
+        >
+          <h3
+            className="text-sm font-medium mb-2"
+            style={{ color: 'var(--color-text-secondary)' }}
+          >
+            Votre progression
+          </h3>
           <ProgressStats stats={progression.stats} size="md" />
         </div>
       )}
 
       {status === 'unauthenticated' && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <p className="text-blue-700 text-sm">
-            <a href="/login" className="font-medium underline">
+        <div
+          className="rounded-lg p-4"
+          style={{
+            backgroundColor: 'color-mix(in srgb, var(--ctp-blue) 15%, transparent)',
+            borderWidth: '1px',
+            borderColor: 'var(--ctp-blue)',
+          }}
+        >
+          <p className="text-sm" style={{ color: 'var(--ctp-blue)' }}>
+            <a
+              href="/login"
+              className="font-medium underline"
+              style={{ color: 'var(--ctp-blue)' }}
+            >
               Connectez-vous
             </a>{' '}
             pour suivre votre progression et débloquer les modules.

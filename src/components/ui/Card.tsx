@@ -6,15 +6,8 @@ export interface CardProps extends HTMLAttributes<HTMLDivElement> {
 }
 
 export const Card = forwardRef<HTMLDivElement, CardProps>(
-  ({ className = '', variant = 'default', padding = 'md', children, ...props }, ref) => {
-    const baseStyles = 'rounded-xl bg-white border';
-
-    const variantStyles = {
-      default: 'border-gray-200',
-      interactive:
-        'border-gray-200 hover:border-blue-300 hover:shadow-md transition-all cursor-pointer',
-      elevated: 'border-gray-200 shadow-lg',
-    };
+  ({ className = '', variant = 'default', padding = 'md', children, style, ...props }, ref) => {
+    const baseStyles = 'rounded-xl';
 
     const paddingStyles = {
       none: '',
@@ -23,10 +16,22 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(
       lg: 'p-6 sm:p-8',
     };
 
+    const variantClasses = {
+      default: '',
+      interactive: 'hover:shadow-md transition-all cursor-pointer',
+      elevated: 'shadow-lg',
+    };
+
     return (
       <div
         ref={ref}
-        className={`${baseStyles} ${variantStyles[variant]} ${paddingStyles[padding]} ${className}`}
+        className={`${baseStyles} ${variantClasses[variant]} ${paddingStyles[padding]} ${className}`}
+        style={{
+          backgroundColor: 'var(--color-bg-elevated)',
+          borderWidth: '1px',
+          borderColor: 'var(--color-border)',
+          ...style,
+        }}
         {...props}
       >
         {children}
@@ -56,9 +61,14 @@ export interface CardTitleProps extends HTMLAttributes<HTMLHeadingElement> {
 }
 
 export const CardTitle = forwardRef<HTMLHeadingElement, CardTitleProps>(
-  ({ className = '', as: Component = 'h3', children, ...props }, ref) => {
+  ({ className = '', as: Component = 'h3', children, style, ...props }, ref) => {
     return (
-      <Component ref={ref} className={`text-lg font-semibold text-gray-900 ${className}`} {...props}>
+      <Component
+        ref={ref}
+        className={`text-lg font-semibold ${className}`}
+        style={{ color: 'var(--color-text)', ...style }}
+        {...props}
+      >
         {children}
       </Component>
     );
@@ -70,9 +80,14 @@ CardTitle.displayName = 'CardTitle';
 export interface CardDescriptionProps extends HTMLAttributes<HTMLParagraphElement> {}
 
 export const CardDescription = forwardRef<HTMLParagraphElement, CardDescriptionProps>(
-  ({ className = '', children, ...props }, ref) => {
+  ({ className = '', children, style, ...props }, ref) => {
     return (
-      <p ref={ref} className={`text-sm text-gray-600 mt-1 ${className}`} {...props}>
+      <p
+        ref={ref}
+        className={`text-sm mt-1 ${className}`}
+        style={{ color: 'var(--color-text-secondary)', ...style }}
+        {...props}
+      >
         {children}
       </p>
     );
@@ -98,9 +113,18 @@ CardContent.displayName = 'CardContent';
 export interface CardFooterProps extends HTMLAttributes<HTMLDivElement> {}
 
 export const CardFooter = forwardRef<HTMLDivElement, CardFooterProps>(
-  ({ className = '', children, ...props }, ref) => {
+  ({ className = '', children, style, ...props }, ref) => {
     return (
-      <div ref={ref} className={`mt-4 pt-4 border-t border-gray-100 ${className}`} {...props}>
+      <div
+        ref={ref}
+        className={`mt-4 pt-4 ${className}`}
+        style={{
+          borderTopWidth: '1px',
+          borderTopColor: 'var(--color-border-light)',
+          ...style,
+        }}
+        {...props}
+      >
         {children}
       </div>
     );

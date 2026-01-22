@@ -15,11 +15,16 @@ export default function Error({ error, reset }: ErrorProps) {
   }, [error]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+    <div
+      className="min-h-screen flex items-center justify-center px-4"
+      style={{ backgroundColor: 'var(--color-bg)' }}
+    >
       <div className="text-center">
         <div className="text-6xl mb-6">⚠️</div>
-        <h1 className="text-4xl font-bold text-gray-900 mb-4">Une erreur est survenue</h1>
-        <p className="text-gray-600 mb-8 max-w-md">
+        <h1 className="text-4xl font-bold mb-4" style={{ color: 'var(--color-text)' }}>
+          Une erreur est survenue
+        </h1>
+        <p className="mb-8 max-w-md" style={{ color: 'var(--color-text-secondary)' }}>
           Nous sommes désolés, quelque chose s&apos;est mal passé. Veuillez réessayer.
         </p>
         <div className="flex gap-4 justify-center">
@@ -28,7 +33,13 @@ export default function Error({ error, reset }: ErrorProps) {
           </Button>
           <a
             href="/"
-            className="inline-block px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors"
+            className="inline-block px-6 py-3 rounded-lg font-medium transition-colors"
+            style={{
+              borderWidth: '1px',
+              borderColor: 'var(--color-border)',
+              color: 'var(--color-text-secondary)',
+              backgroundColor: 'var(--color-bg-tertiary)',
+            }}
           >
             Retour à l&apos;accueil
           </a>

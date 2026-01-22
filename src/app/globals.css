@@ -1,4 +1,6 @@
 @import 'tailwindcss';
+@import '../lib/theme/theme.css';
+@import '../lib/theme/cursors/cursors.css';
 
 :root {
   --font-inter: 'Inter', sans-serif;
@@ -7,6 +9,9 @@
 body {
   font-family: var(--font-inter);
   min-height: 100vh;
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 /* Touch target optimization for mobile */
@@ -27,11 +32,133 @@ html {
 
 /* Focus visible for keyboard navigation */
 :focus-visible {
-  outline: 2px solid #3b82f6;
+  outline: 2px solid var(--color-primary);
   outline-offset: 2px;
 }
 
 /* Remove default focus styles for mouse users */
 :focus:not(:focus-visible) {
   outline: none;
+}
+
+/* Theme transition for all color properties */
+* {
+  transition-property: background-color, border-color, color;
+  transition-duration: 0.15s;
+  transition-timing-function: ease;
+}
+
+/* Disable transitions on page load */
+.no-transitions * {
+  transition: none !important;
+}
+
+/* ============================================
+   SLIDE ANIMATIONS
+   ============================================ */
+
+/* Slide enter/exit animations */
+@keyframes slide-in-from-right {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slide-in-from-left {
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slide-out-to-left {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+}
+
+@keyframes slide-out-to-right {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+/* Animation classes */
+.slide-enter-forward {
+  animation: slide-in-from-right 250ms ease-out forwards;
+}
+
+.slide-enter-backward {
+  animation: slide-in-from-left 250ms ease-out forwards;
+}
+
+.slide-exit-forward {
+  animation: slide-out-to-left 200ms ease-in forwards;
+}
+
+.slide-exit-backward {
+  animation: slide-out-to-right 200ms ease-in forwards;
+}
+
+.slide-fade-in {
+  animation: fade-in 250ms ease-out forwards;
+}
+
+.slide-fade-out {
+  animation: fade-out 200ms ease-in forwards;
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .slide-enter-forward,
+  .slide-enter-backward,
+  .slide-exit-forward,
+  .slide-exit-backward {
+    animation: fade-in 150ms ease-out forwards;
+  }
+
+  .slide-fade-in {
+    animation: fade-in 150ms ease-out forwards;
+  }
+
+  .slide-fade-out {
+    animation: fade-out 150ms ease-in forwards;
+  }
 }

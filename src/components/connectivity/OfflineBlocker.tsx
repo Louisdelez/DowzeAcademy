@@ -13,10 +13,19 @@ export function OfflineBlocker({ children, fallback }: OfflineBlockerProps) {
   if (!isOnline) {
     return (
       fallback || (
-        <div className="bg-gray-100 border border-gray-300 rounded-lg p-6 text-center">
+        <div
+          className="rounded-lg p-6 text-center"
+          style={{
+            backgroundColor: 'var(--color-bg-tertiary)',
+            borderWidth: '1px',
+            borderColor: 'var(--color-border)',
+          }}
+        >
           <span className="text-3xl mb-2 block">📡</span>
-          <h4 className="font-medium text-gray-800 mb-1">Hors ligne</h4>
-          <p className="text-gray-600 text-sm">
+          <h4 className="font-medium mb-1" style={{ color: 'var(--color-text)' }}>
+            Hors ligne
+          </h4>
+          <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
             Cette fonctionnalité nécessite une connexion internet.
           </p>
         </div>

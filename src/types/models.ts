@@ -22,6 +22,7 @@ export {
   QuestionType,
   PracticeType,
   PracticeValidationMode,
+  LessonMode,
 } from '@/generated/prisma';
 
 /** Domain with included packs */

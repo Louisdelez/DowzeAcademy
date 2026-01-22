@@ -45,6 +45,11 @@ enum PracticeValidationMode {
   MANUAL
 }
 
+enum LessonMode {
+  LEGACY
+  SLIDES
+}
+
 // ============================================
 // CONTENT MODELS
 // ============================================
@@ -130,6 +135,7 @@ model Lesson {
   practiceType           PracticeType
   practiceInstructions   String                 @db.Text
   practiceValidationMode PracticeValidationMode @default(DECLARATIVE)
+  mode                   LessonMode             @default(LEGACY)
   createdAt              DateTime               @default(now())
   updatedAt              DateTime               @updatedAt
 
@@ -138,16 +144,17 @@ model Lesson {
 }
 
 model QuizQuestion {
-  id            String       @id @default(uuid())
-  lessonId      String
-  questionText  String       @db.Text
-  questionType  QuestionType
-  options       Json?
-  correctAnswer Json
-  feedback      String?      @db.Text
-  order         Int          @default(0)
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
+  id                  String       @id @default(uuid())
+  lessonId            String
+  questionText        String       @db.Text
+  questionType        QuestionType
+  options             Json?
+  correctAnswer       Json
+  feedback            String?      @db.Text
+  linkedTheorySection String?      @db.VarChar(255)
+  order               Int          @default(0)
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
 
   lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
 
@@ -159,12 +166,13 @@ model QuizQuestion {
 // ============================================
 
 model User {
-  id           String   @id @default(uuid())
-  email        String   @unique @db.VarChar(255)
-  name         String?  @db.VarChar(100)
-  passwordHash String   @db.VarChar(255)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id              String   @id @default(uuid())
+  email           String   @unique @db.VarChar(255)
+  name            String?  @db.VarChar(100)
+  passwordHash    String   @db.VarChar(255)
+  themePreference String   @default("mocha") @db.VarChar(20)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   progressions UserProgression[]
 }
@@ -190,6 +198,7 @@ model UserProgression {
   quizPassedAt        DateTime?
   practiceCompletedAt DateTime?
   completedAt         DateTime?
+  slideState          Json?
   createdAt           DateTime             @default(now())
   updatedAt           DateTime             @updatedAt
 

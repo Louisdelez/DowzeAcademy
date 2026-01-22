@@ -1,10 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { QuizQuestionEditor, type QuizQuestion } from './QuizQuestionEditor';
+import { parseTheorySlides } from '@/lib/utils/theory-parser';
 
 export interface LessonData {
   theoryContent: string;
@@ -12,6 +13,7 @@ export interface LessonData {
   practiceType: string;
   practiceInstructions: string;
   questions: QuizQuestion[];
+  mode: 'LEGACY' | 'SLIDES';
 }
 
 interface LessonEditorProps {
@@ -28,7 +30,20 @@ const PRACTICE_TYPES = [
 
 export function LessonEditor({ initialData, onChange }: LessonEditorProps) {
   const [activeTab, setActiveTab] = useState<'theory' | 'quiz' | 'practice'>('theory');
-  const [data, setData] = useState<LessonData>(initialData);
+  const [data, setData] = useState<LessonData>({
+    ...initialData,
+    mode: initialData.mode || 'LEGACY',
+  });
+
+  // Parse theory content to extract section titles for linking
+  const theorySections = useMemo(() => {
+    if (!data.theoryContent) return [];
+    const slides = parseTheorySlides(data.theoryContent);
+    return slides.map((slide) => ({
+      id: slide.id,
+      title: slide.title,
+    }));
+  }, [data.theoryContent]);
 
   const updateData = (updates: Partial<LessonData>) => {
     const newData = { ...data, ...updates };
@@ -92,23 +107,87 @@ export function LessonEditor({ initialData, onChange }: LessonEditorProps) {
 
       {/* Theory Tab */}
       {activeTab === 'theory' && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Contenu théorique</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-gray-500 mb-4">
-              Utilisez la syntaxe Markdown pour formater votre contenu (titres, listes, code, etc.)
-            </p>
-            <textarea
-              value={data.theoryContent}
-              onChange={(e) => updateData({ theoryContent: e.target.value })}
-              rows={20}
-              className="w-full font-mono text-sm border border-gray-300 rounded-lg p-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="# Titre principal&#10;&#10;## Section 1&#10;&#10;Votre contenu ici...&#10;&#10;- Point 1&#10;- Point 2&#10;&#10;```code```"
-            />
-          </CardContent>
-        </Card>
+        <div className="space-y-6">
+          {/* Mode Toggle */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Mode d&apos;affichage</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-4">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="lesson-mode"
+                    value="LEGACY"
+                    checked={data.mode === 'LEGACY'}
+                    onChange={() => updateData({ mode: 'LEGACY' })}
+                    className="w-4 h-4 text-blue-600"
+                  />
+                  <span className="text-sm font-medium text-gray-700">
+                    Mode classique (onglets)
+                  </span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="lesson-mode"
+                    value="SLIDES"
+                    checked={data.mode === 'SLIDES'}
+                    onChange={() => updateData({ mode: 'SLIDES' })}
+                    className="w-4 h-4 text-blue-600"
+                  />
+                  <span className="text-sm font-medium text-gray-700">
+                    Mode slides (style Duolingo)
+                  </span>
+                </label>
+              </div>
+              <p className="text-sm text-gray-500 mt-2">
+                {data.mode === 'SLIDES'
+                  ? 'La théorie sera découpée en slides navigables. Chaque titre ## crée une nouvelle slide.'
+                  : 'La théorie, le quiz et la pratique s\'affichent dans des onglets séparés.'}
+              </p>
+            </CardContent>
+          </Card>
+
+          {/* Theory Content */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Contenu théorique</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-gray-500 mb-4">
+                Utilisez la syntaxe Markdown pour formater votre contenu (titres, listes, code, etc.)
+                {data.mode === 'SLIDES' && (
+                  <span className="block mt-1 text-blue-600">
+                    💡 En mode slides, chaque titre ## crée une nouvelle slide.
+                  </span>
+                )}
+              </p>
+              <textarea
+                value={data.theoryContent}
+                onChange={(e) => updateData({ theoryContent: e.target.value })}
+                rows={20}
+                className="w-full font-mono text-sm border border-gray-300 rounded-lg p-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="# Titre principal&#10;&#10;## Section 1&#10;&#10;Votre contenu ici...&#10;&#10;- Point 1&#10;- Point 2&#10;&#10;```code```"
+              />
+              {data.mode === 'SLIDES' && theorySections.length > 0 && (
+                <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+                  <p className="text-sm font-medium text-gray-700 mb-2">
+                    Slides détectées ({theorySections.length}):
+                  </p>
+                  <ul className="text-sm text-gray-600 space-y-1">
+                    {theorySections.map((section, index) => (
+                      <li key={section.id}>
+                        {index + 1}. {section.title}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       )}
 
       {/* Quiz Tab */}
@@ -142,6 +221,7 @@ export function LessonEditor({ initialData, onChange }: LessonEditorProps) {
               key={index}
               question={question}
               questionIndex={index}
+              theorySections={theorySections}
               onUpdate={(updates) => updateQuestion(index, updates)}
               onRemove={() => removeQuestion(index)}
             />
