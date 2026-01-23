@@ -350,9 +350,23 @@ export async function updateLesson(
     quizThreshold: number;
     practiceType: string;
     practiceInstructions: string;
+    practiceTimerDuration?: number;
     mode?: string;
+    // Feature 005: Randomization settings
+    shuffleQuestions?: boolean;
+    shuffleAnswers?: boolean;
+    questionsToShow?: number | null;
   }
 ) {
+  // Feature 005: Handle questionsToShow edge cases (T031)
+  // - questionsToShow = 0 or negative → treat as null (show all)
+  // - questionsToShow = null → show all questions
+  // - questionsToShow > pool will be handled at runtime by selectQuestions()
+  const normalizedQuestionsToShow =
+    data.questionsToShow !== undefined && data.questionsToShow !== null && data.questionsToShow > 0
+      ? data.questionsToShow
+      : null;
+
   // Upsert lesson
   return prisma.lesson.upsert({
     where: { moduleId },
@@ -361,7 +375,12 @@ export async function updateLesson(
       quizThreshold: data.quizThreshold,
       practiceType: data.practiceType as any,
       practiceInstructions: data.practiceInstructions,
+      ...(data.practiceTimerDuration !== undefined && { practiceTimerDuration: data.practiceTimerDuration }),
       ...(data.mode && { mode: data.mode as any }),
+      // Feature 005: Randomization settings
+      ...(data.shuffleQuestions !== undefined && { shuffleQuestions: data.shuffleQuestions }),
+      ...(data.shuffleAnswers !== undefined && { shuffleAnswers: data.shuffleAnswers }),
+      questionsToShow: normalizedQuestionsToShow,
     },
     create: {
       moduleId,
@@ -369,7 +388,12 @@ export async function updateLesson(
       quizThreshold: data.quizThreshold,
       practiceType: data.practiceType as any,
       practiceInstructions: data.practiceInstructions,
+      practiceTimerDuration: data.practiceTimerDuration || 300,
       mode: (data.mode as any) || 'LEGACY',
+      // Feature 005: Randomization defaults
+      shuffleQuestions: data.shuffleQuestions ?? true,
+      shuffleAnswers: data.shuffleAnswers ?? true,
+      questionsToShow: normalizedQuestionsToShow,
     },
   });
 }

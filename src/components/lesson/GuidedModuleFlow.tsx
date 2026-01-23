@@ -32,32 +32,43 @@ interface QuizFeedback {
 
 interface GuidedModuleFlowProps {
   moduleId: string;
+  lessonId?: string; // Feature 005: Needed for quiz attempt API
   moduleName?: string;
   theoryContent: string;
   questions: Question[];
   quizThreshold: number;
   practiceType: PracticeType;
   practiceInstructions: string;
+  practiceTimerDuration?: number;
   initialQuizPassed?: boolean;
   initialPracticeCompleted?: boolean;
   mode?: LessonMode;
   initialSlideState?: SlideState | null;
+  // Feature 005: Randomization settings
+  shuffleQuestions?: boolean;
+  shuffleAnswers?: boolean;
+  questionsToShow?: number | null;
 }
 
 type Phase = 'theory' | 'quiz' | 'practice' | 'complete';
 
 export function GuidedModuleFlow({
   moduleId,
+  lessonId,
   moduleName = 'Module',
   theoryContent,
   questions,
   quizThreshold,
   practiceType,
   practiceInstructions,
+  practiceTimerDuration,
   initialQuizPassed = false,
   initialPracticeCompleted = false,
   mode = 'LEGACY',
   initialSlideState,
+  shuffleQuestions,
+  shuffleAnswers,
+  questionsToShow,
 }: GuidedModuleFlowProps) {
   const router = useRouter();
 
@@ -68,9 +79,14 @@ export function GuidedModuleFlow({
         moduleId={moduleId}
         moduleName={moduleName}
         lesson={{
-          id: moduleId,
+          id: lessonId || moduleId, // Feature 005: Use actual lessonId for quiz attempts
           theory: theoryContent,
           practiceInstructions: practiceInstructions,
+          practiceTimerDuration: practiceTimerDuration,
+          // Feature 005: Randomization settings
+          shuffleQuestions,
+          shuffleAnswers,
+          questionsToShow,
           quizQuestions: questions.map((q) => ({
             id: q.id,
             questionText: q.questionText,
@@ -392,6 +408,7 @@ export function GuidedModuleFlow({
           <PracticeSlide
             practiceType={practiceType}
             instructions={practiceInstructions}
+            practiceTimerDuration={practiceTimerDuration}
             onComplete={handleCompletePractice}
             isCompleting={isCompletingPractice}
           />

@@ -50,6 +50,12 @@ enum LessonMode {
   SLIDES
 }
 
+enum QuizAttemptStatus {
+  IN_PROGRESS
+  SUBMITTED
+  ABANDONED
+}
+
 // ============================================
 // CONTENT MODELS
 // ============================================
@@ -135,12 +141,20 @@ model Lesson {
   practiceType           PracticeType
   practiceInstructions   String                 @db.Text
   practiceValidationMode PracticeValidationMode @default(DECLARATIVE)
+  practiceTimerDuration  Int                    @default(300) // Timer duration in seconds (default 5 minutes)
   mode                   LessonMode             @default(LEGACY)
+
+  // Quiz Randomization settings (Feature 005)
+  questionsToShow        Int?                   // null = show all questions
+  shuffleQuestions       Boolean                @default(true)
+  shuffleAnswers         Boolean                @default(true)
+
   createdAt              DateTime               @default(now())
   updatedAt              DateTime               @updatedAt
 
   module    Module         @relation(fields: [moduleId], references: [id], onDelete: Cascade)
   questions QuizQuestion[]
+  attempts  QuizAttempt[]
 }
 
 model QuizQuestion {
@@ -148,17 +162,33 @@ model QuizQuestion {
   lessonId            String
   questionText        String       @db.Text
   questionType        QuestionType
-  options             Json?
-  correctAnswer       Json
+  options             Json?        // DEPRECATED: Use QuizOption model instead
+  correctAnswer       Json         // DEPRECATED: Use QuizOption.isCorrect instead
   feedback            String?      @db.Text
   linkedTheorySection String?      @db.VarChar(255)
   order               Int          @default(0)
   createdAt           DateTime     @default(now())
   updatedAt           DateTime     @updatedAt
 
-  lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  lesson  Lesson       @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  choices QuizOption[] // NEW: Explicit options relation (Feature 005)
 
   @@index([lessonId, order])
+}
+
+// Quiz Option with stable UUID for randomization (Feature 005)
+model QuizOption {
+  id         String   @id @default(uuid())
+  questionId String
+  text       String   @db.Text
+  isCorrect  Boolean  @default(false)
+  order      Int      @default(0) // Legacy stable order when shuffle disabled
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  question QuizQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@index([questionId, order])
 }
 
 // ============================================
@@ -211,14 +241,60 @@ model UserProgression {
 }
 
 model QuizAttempt {
-  id            String   @id @default(uuid())
+  id            String            @id @default(uuid())
   progressionId String
-  answers       Json
-  score         Int
-  passed        Boolean
-  attemptedAt   DateTime @default(now())
+  lessonId      String?           // Direct lesson reference (Feature 005) - nullable for backward compatibility
 
-  progression UserProgression @relation(fields: [progressionId], references: [id], onDelete: Cascade)
+  // Attempt status (Feature 005)
+  status        QuizAttemptStatus @default(IN_PROGRESS)
+  startedAt     DateTime          @default(now())
+  submittedAt   DateTime?
 
-  @@index([progressionId, attemptedAt])
+  // Score (computed on submit)
+  score         Int?
+  passed        Boolean?
+
+  // Configuration snapshots frozen at attempt creation (Feature 005)
+  questionsToShowSnapshot  Int?
+  shuffleQuestionsSnapshot Boolean  @default(true)
+  shuffleAnswersSnapshot   Boolean  @default(true)
+
+  // Optional: Debug/reproducibility seed
+  seed          String?           @db.VarChar(50)
+
+  // DEPRECATED: Old JSON answers field (kept for backward compatibility)
+  answers       Json?
+  attemptedAt   DateTime          @default(now()) // Kept for backward compatibility
+
+  progression UserProgression       @relation(fields: [progressionId], references: [id], onDelete: Cascade)
+  lesson      Lesson?               @relation(fields: [lessonId], references: [id])
+  questions   QuizAttemptQuestion[]
+
+  @@index([progressionId, startedAt(sort: Desc)])
+  @@index([lessonId, status])
+}
+
+// Tracks which questions were drawn and their display order (Feature 005)
+model QuizAttemptQuestion {
+  id                String    @id @default(uuid())
+  attemptId         String
+  questionId        String    // Reference to QuizQuestion.id
+
+  // Display information
+  position          Int       // 1-indexed display order
+
+  // Choice mapping for MCQ (JSON: { "optionId": "A", ... })
+  choiceMappingJson Json?
+
+  // User's answer
+  userAnswerJson    Json?     // optionId for SINGLE_CHOICE, array for MULTIPLE_CHOICE, string for SHORT_TEXT
+  isCorrect         Boolean?
+
+  answeredAt        DateTime?
+  createdAt         DateTime  @default(now())
+
+  attempt QuizAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+
+  @@unique([attemptId, questionId])
+  @@index([attemptId, position])
 }

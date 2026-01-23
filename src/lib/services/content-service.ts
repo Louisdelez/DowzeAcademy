@@ -182,7 +182,12 @@ export async function getModuleWithLesson(moduleId: string) {
           quizThreshold: true,
           practiceType: true,
           practiceInstructions: true,
+          practiceTimerDuration: true,
           mode: true,
+          // Feature 005: Randomization settings
+          shuffleQuestions: true,
+          shuffleAnswers: true,
+          questionsToShow: true,
           questions: {
             orderBy: { order: 'asc' },
             select: {

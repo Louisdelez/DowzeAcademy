@@ -103,6 +103,35 @@ export function QuizResultSlide({
           </div>
         </div>
 
+        {/* Wrong questions summary (Feature 005) */}
+        {!passed && wrongQuestions.length > 0 && (
+          <div className="mb-8">
+            <h3 className="text-sm font-medium text-[var(--color-text)] mb-3">
+              Questions à revoir ({wrongQuestions.length})
+            </h3>
+            <div className="space-y-3">
+              {wrongQuestions.map((question, index) => (
+                <div
+                  key={question.id}
+                  className="p-3 rounded-lg bg-[var(--color-surface-1)] border-l-4 border-[var(--color-peach)]"
+                >
+                  <p className="text-sm text-[var(--color-text)] font-medium mb-1">
+                    Question {index + 1}
+                  </p>
+                  <p className="text-sm text-[var(--color-text-secondary)]">
+                    {question.questionText}
+                  </p>
+                  {question.feedback && (
+                    <p className="text-xs text-[var(--color-subtext)] mt-2 italic">
+                      💡 {question.feedback}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Suggested slides for review (when failed) */}
         {!passed && suggestedSlides.length > 0 && (
           <div className="mb-8">

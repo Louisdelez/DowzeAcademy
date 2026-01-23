@@ -2,11 +2,13 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/Button';
+import { ExerciseTimerModal } from './ExerciseTimerModal';
 import type { PracticeType } from '@/types/models';
 
 interface PracticeSlideProps {
   practiceType: PracticeType;
   instructions: string;
+  practiceTimerDuration?: number;
   onComplete: () => void;
   isCompleting: boolean;
 }
@@ -40,23 +42,12 @@ const practiceTypeConfig: Record<
 export function PracticeSlide({
   practiceType,
   instructions,
+  practiceTimerDuration,
   onComplete,
   isCompleting,
 }: PracticeSlideProps) {
-  const [showConfirm, setShowConfirm] = useState(false);
+  const [isTimerModalOpen, setIsTimerModalOpen] = useState(false);
   const config = practiceTypeConfig[practiceType];
-
-  const handleCompleteClick = () => {
-    setShowConfirm(true);
-  };
-
-  const handleConfirm = () => {
-    onComplete();
-  };
-
-  const handleCancel = () => {
-    setShowConfirm(false);
-  };
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-6">
@@ -124,60 +115,43 @@ export function PracticeSlide({
           </div>
         </div>
 
-        {/* Completion section */}
-        {!showConfirm ? (
-          <div
-            className="rounded-lg p-6 text-center"
+        {/* Launch exercise button */}
+        <div
+          className="rounded-lg p-6 text-center"
+          style={{
+            backgroundColor: 'color-mix(in srgb, var(--ctp-green) 15%, transparent)',
+            borderWidth: '1px',
+            borderColor: 'var(--ctp-green)',
+          }}
+        >
+          <p
+            className="mb-4"
+            style={{ color: 'var(--ctp-green)' }}
+          >
+            Lisez les instructions ci-dessus puis lancez l&apos;exercice pour commencer le timer.
+          </p>
+          <Button
+            onClick={() => setIsTimerModalOpen(true)}
+            disabled={isCompleting}
             style={{
-              backgroundColor: 'color-mix(in srgb, var(--ctp-blue) 15%, transparent)',
-              borderWidth: '1px',
-              borderColor: 'var(--ctp-blue)',
+              backgroundColor: 'var(--ctp-green)',
+              color: 'var(--ctp-base)',
             }}
           >
-            <p
-              className="mb-4"
-              style={{ color: 'var(--ctp-blue)' }}
-            >
-              Une fois que vous avez terminé la pratique, cliquez sur le bouton
-              ci-dessous pour valider.
-            </p>
-            <Button onClick={handleCompleteClick} disabled={isCompleting}>
-              J&apos;ai terminé la pratique
-            </Button>
-          </div>
-        ) : (
-          <div
-            className="rounded-lg p-6"
-            style={{
-              backgroundColor: 'color-mix(in srgb, var(--ctp-yellow) 15%, transparent)',
-              borderWidth: '1px',
-              borderColor: 'var(--ctp-yellow)',
-            }}
-          >
-            <p
-              className="mb-4 text-center font-medium"
-              style={{ color: 'var(--ctp-yellow)' }}
-            >
-              Êtes-vous sûr d&apos;avoir terminé la pratique ?
-            </p>
-            <div className="flex justify-center gap-4">
-              <Button
-                variant="outline"
-                onClick={handleCancel}
-                disabled={isCompleting}
-              >
-                Annuler
-              </Button>
-              <Button
-                onClick={handleConfirm}
-                isLoading={isCompleting}
-              >
-                Confirmer
-              </Button>
-            </div>
-          </div>
-        )}
+            Lancer l&apos;exercice
+          </Button>
+        </div>
       </div>
+
+      {/* Timer Modal */}
+      <ExerciseTimerModal
+        isOpen={isTimerModalOpen}
+        onClose={() => setIsTimerModalOpen(false)}
+        onValidate={onComplete}
+        durationSeconds={practiceTimerDuration || 300}
+        exerciseSummary={instructions}
+        isValidating={isCompleting}
+      />
     </div>
   );
 }

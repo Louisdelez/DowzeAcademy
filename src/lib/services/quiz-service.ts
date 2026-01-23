@@ -12,8 +12,17 @@ interface QuizGradingResult {
   feedback: { questionId: string; isCorrect: boolean; feedback?: string }[];
 }
 
+interface QuestionWithChoices {
+  id: string;
+  questionType: string;
+  correctAnswer: unknown;
+  feedback: string | null;
+  choices?: { id: string; isCorrect: boolean }[];
+}
+
 /**
  * Grades a quiz submission and returns the result
+ * Updated for Feature 005: Supports both legacy JSON options and new QuizOption model
  */
 export async function gradeQuiz(
   moduleId: string,
@@ -29,11 +38,37 @@ export async function gradeQuiz(
   const questions = lesson.questions;
   const feedback: QuizGradingResult['feedback'] = [];
 
+  // Load choices for all questions (Feature 005)
+  const questionIds = questions.map((q) => q.id);
+  const choicesData = await prisma.quizOption.findMany({
+    where: { questionId: { in: questionIds } },
+  });
+
+  // Group choices by question
+  const choicesByQuestion = new Map<string, { id: string; isCorrect: boolean }[]>();
+  for (const choice of choicesData) {
+    const existing = choicesByQuestion.get(choice.questionId) || [];
+    existing.push({ id: choice.id, isCorrect: choice.isCorrect });
+    choicesByQuestion.set(choice.questionId, existing);
+  }
+
   let correctCount = 0;
 
   for (const question of questions) {
     const userAnswer = answers.find((a) => a.questionId === question.id);
-    const isCorrect = checkAnswer(question.correctAnswer, userAnswer?.answer, question.questionType);
+    const choices = choicesByQuestion.get(question.id);
+
+    // Use new optionId-based grading if choices exist, otherwise fall back to legacy
+    const isCorrect = gradeQuestion(
+      {
+        id: question.id,
+        questionType: question.questionType,
+        correctAnswer: question.correctAnswer,
+        feedback: question.feedback,
+        choices,
+      },
+      userAnswer?.answer
+    );
 
     if (isCorrect) {
       correctCount++;
@@ -56,6 +91,60 @@ export async function gradeQuiz(
     correctCount,
     feedback,
   };
+}
+
+/**
+ * Grade a single question using optionId-based scoring (Feature 005)
+ * Falls back to legacy JSON-based scoring if no choices exist
+ */
+export function gradeQuestion(
+  question: QuestionWithChoices,
+  userAnswer: string | string[] | undefined
+): boolean {
+  if (!userAnswer) return false;
+
+  // Use QuizOption model if choices exist (Feature 005)
+  if (question.choices && question.choices.length > 0) {
+    return gradeWithOptionIds(question.choices, userAnswer, question.questionType);
+  }
+
+  // Fall back to legacy JSON-based grading
+  return checkAnswer(question.correctAnswer, userAnswer, question.questionType);
+}
+
+/**
+ * Grade using QuizOption IDs (Feature 005)
+ * This works regardless of display order (A/B/C/D) because we use stable option IDs
+ */
+function gradeWithOptionIds(
+  choices: { id: string; isCorrect: boolean }[],
+  userAnswer: string | string[],
+  questionType: string
+): boolean {
+  const correctOptionIds = choices.filter((c) => c.isCorrect).map((c) => c.id);
+
+  switch (questionType) {
+    case 'SINGLE_CHOICE': {
+      // User should have selected exactly the correct option
+      const answerId = typeof userAnswer === 'string' ? userAnswer : userAnswer[0];
+      return correctOptionIds.includes(answerId);
+    }
+
+    case 'MULTIPLE_CHOICE': {
+      // User should have selected exactly all correct options
+      const userAnswers = Array.isArray(userAnswer) ? userAnswer : [userAnswer];
+
+      if (userAnswers.length !== correctOptionIds.length) {
+        return false;
+      }
+
+      // Check all user answers are correct
+      return userAnswers.every((id) => correctOptionIds.includes(id));
+    }
+
+    default:
+      return false;
+  }
 }
 
 /**

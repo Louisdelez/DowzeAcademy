@@ -24,7 +24,12 @@ interface Lesson {
   quizThreshold: number;
   practiceType: PracticeType;
   practiceInstructions: string;
+  practiceTimerDuration?: number;
   mode: LessonMode;
+  // Feature 005: Randomization settings
+  shuffleQuestions?: boolean;
+  shuffleAnswers?: boolean;
+  questionsToShow?: number | null;
   questions: Question[];
 }
 
@@ -151,15 +156,20 @@ export function ModuleContent({ moduleId, moduleName, lesson }: ModuleContentPro
   return (
     <GuidedModuleFlow
       moduleId={moduleId}
+      lessonId={lesson.id}
       moduleName={moduleName}
       theoryContent={lesson.theoryContent}
       questions={lesson.questions}
       quizThreshold={lesson.quizThreshold}
       practiceType={lesson.practiceType}
       practiceInstructions={lesson.practiceInstructions}
+      practiceTimerDuration={lesson.practiceTimerDuration}
       initialQuizPassed={!!progression?.quizPassedAt}
       initialPracticeCompleted={!!progression?.practiceCompletedAt}
       mode={lesson.mode}
+      shuffleQuestions={lesson.shuffleQuestions}
+      shuffleAnswers={lesson.shuffleAnswers}
+      questionsToShow={lesson.questionsToShow}
     />
   );
 }
