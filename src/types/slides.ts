@@ -87,6 +87,7 @@ export interface SlideNavigationState {
   showFeedback: boolean;
   quizResult: { score: number; passed: boolean } | null;
   returnToQuizIndex: number | null; // For theory review from quiz
+  wrongQuestionIds: string[]; // Feature 005: IDs of wrong questions from server
 }
 
 // ============================================

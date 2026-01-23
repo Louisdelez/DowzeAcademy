@@ -1,6 +1,6 @@
 'use client';
 
-import { useReducer, useCallback, useMemo, useEffect, useRef } from 'react';
+import { useReducer, useCallback, useMemo, useEffect, useRef, useState } from 'react';
 import type {
   SlideState,
   SlidePhase,
@@ -10,6 +10,7 @@ import type {
   QuizSlide,
   PracticeSlide,
 } from '@/types/slides';
+import type { AttemptQuestion, DisplayChoice, QuizResultResponse, QuestionResult } from '@/types/quiz';
 
 // ============================================
 // TYPES
@@ -17,6 +18,7 @@ import type {
 
 interface UseSlideNavigationOptions {
   moduleId: string;
+  lessonId: string;
   theorySlides: TheorySlide[];
   quizQuestions: QuizSlide[];
   practiceSlides: PracticeSlide[];
@@ -56,6 +58,15 @@ interface UseSlideNavigationReturn {
 
   // For persistence
   getSlideState: () => SlideState;
+
+  // Feature 005: Quiz attempt data
+  attemptId: string | null;
+  attemptQuestions: AttemptQuestion[];
+  currentAttemptQuestion: AttemptQuestion | null;
+  initializeQuizAttempt: () => Promise<void>;
+  submitQuizAttempt: () => Promise<QuizResultResponse | null>;
+  // Feature 005: Server-side isCorrect values per questionId
+  serverIsCorrect: Record<string, boolean>;
 }
 
 // ============================================
@@ -71,7 +82,7 @@ type SlideAction =
   | { type: 'SET_ANSWER'; payload: { questionId: string; answer: string | string[] } }
   | { type: 'SUBMIT_ANSWER' }
   | { type: 'HIDE_FEEDBACK' }
-  | { type: 'COMPLETE_QUIZ'; payload: { score: number; passed: boolean } }
+  | { type: 'COMPLETE_QUIZ'; payload: { score: number; passed: boolean; wrongQuestionIds?: string[] } }
   | { type: 'RETRY_QUIZ' }
   | { type: 'SET_LOADING'; payload: boolean };
 
@@ -101,6 +112,7 @@ function createInitialState(
       showFeedback: false,
       quizResult: null,
       returnToQuizIndex: null,
+      wrongQuestionIds: [],
     };
   }
 
@@ -114,6 +126,7 @@ function createInitialState(
     showFeedback: false,
     quizResult: null,
     returnToQuizIndex: null,
+    wrongQuestionIds: [],
   };
 }
 
@@ -338,6 +351,7 @@ function createReducer(context: ReducerContext) {
       }
 
       case 'COMPLETE_QUIZ': {
+        const wrongIds = action.payload.wrongQuestionIds || [];
         if (action.payload.passed) {
           // Skip practice if no practice slides
           if (context.practiceCount === 0) {
@@ -345,7 +359,9 @@ function createReducer(context: ReducerContext) {
               ...state,
               phase: 'complete',
               direction: 'forward',
-              quizResult: action.payload,
+              showFeedback: false,
+              quizResult: { score: action.payload.score, passed: action.payload.passed },
+              wrongQuestionIds: wrongIds,
             };
           }
           return {
@@ -353,12 +369,16 @@ function createReducer(context: ReducerContext) {
             phase: 'practice',
             practiceIndex: 0,
             direction: 'forward',
-            quizResult: action.payload,
+            showFeedback: false,
+            quizResult: { score: action.payload.score, passed: action.payload.passed },
+            wrongQuestionIds: wrongIds,
           };
         }
         return {
           ...state,
-          quizResult: action.payload,
+          showFeedback: false,
+          quizResult: { score: action.payload.score, passed: action.payload.passed },
+          wrongQuestionIds: wrongIds,
         };
       }
 
@@ -371,6 +391,7 @@ function createReducer(context: ReducerContext) {
           quizResult: null,
           showFeedback: false,
           direction: 'forward',
+          wrongQuestionIds: [],
         };
       }
 
@@ -422,6 +443,7 @@ function calculateScore(
 
 export function useSlideNavigation({
   moduleId,
+  lessonId,
   theorySlides,
   quizQuestions,
   practiceSlides,
@@ -447,6 +469,13 @@ export function useSlideNavigation({
     createInitialState
   );
 
+  // Feature 005: Quiz attempt state
+  const [attemptId, setAttemptId] = useState<string | null>(null);
+  const [attemptQuestions, setAttemptQuestions] = useState<AttemptQuestion[]>([]);
+  const [isAttemptLoading, setIsAttemptLoading] = useState(false);
+  // Feature 005: Store server-side isCorrect values per question
+  const [serverIsCorrect, setServerIsCorrect] = useState<Record<string, boolean>>({});
+
   // Current slide
   const currentSlide = useMemo(() => {
     switch (state.phase) {
@@ -462,13 +491,48 @@ export function useSlideNavigation({
   }, [state.phase, state.theoryIndex, state.quizIndex, state.practiceIndex, theorySlides, quizQuestions, practiceSlides]);
 
   // Navigation actions
-  const goNext = useCallback(() => {
+  const goNext = useCallback(async () => {
     if (state.showFeedback) {
-      dispatch({ type: 'HIDE_FEEDBACK' });
+      // Check if we're on the last question and about to show results
+      const isLastQuestion = state.quizIndex >= quizQuestions.length - 1;
+
+      if (state.phase === 'quiz' && isLastQuestion) {
+        // Submit the attempt to get the server-calculated score
+        if (attemptId) {
+          try {
+            const response = await fetch(`/api/quiz-attempts/${attemptId}/submit`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+            });
+
+            if (response.ok) {
+              const result: QuizResultResponse = await response.json();
+              // Extract wrong question IDs from server response
+              const wrongQuestionIds = result.questions
+                ?.filter((q) => !q.isCorrect)
+                .map((q) => q.questionId) || [];
+              // Use server's score instead of client-side calculation
+              dispatch({
+                type: 'COMPLETE_QUIZ',
+                payload: { score: result.score, passed: result.passed, wrongQuestionIds }
+              });
+              return;
+            }
+          } catch (error) {
+            console.error('Failed to submit quiz attempt:', error);
+          }
+        }
+
+        // Fallback to client-side calculation if no attemptId or server error
+        dispatch({ type: 'HIDE_FEEDBACK' });
+      } else {
+        // Not last question, just move to next
+        dispatch({ type: 'HIDE_FEEDBACK' });
+      }
     } else {
       dispatch({ type: 'GO_NEXT' });
     }
-  }, [state.showFeedback]);
+  }, [state.showFeedback, state.phase, state.quizIndex, quizQuestions.length, attemptId]);
 
   const goPrevious = useCallback(() => {
     dispatch({ type: 'GO_PREVIOUS' });
@@ -521,10 +585,17 @@ export function useSlideNavigation({
   // Wrong questions for retry suggestions
   const wrongQuestions = useMemo(() => {
     if (!state.quizResult) return [];
+    // Use server-provided wrongQuestionIds when available (Feature 005)
+    if (state.wrongQuestionIds.length > 0) {
+      return quizQuestions.filter((q) =>
+        state.wrongQuestionIds.includes(q.questionId)
+      );
+    }
+    // Fallback to client-side calculation for legacy mode
     return quizQuestions.filter(
       (q) => !checkAnswer(q, state.quizAnswers[q.questionId])
     );
-  }, [state.quizResult, quizQuestions, state.quizAnswers]);
+  }, [state.quizResult, state.wrongQuestionIds, quizQuestions, state.quizAnswers]);
 
   // Get state for persistence
   const getSlideState = useCallback((): SlideState => {
@@ -580,6 +651,144 @@ export function useSlideNavigation({
     };
   }, [moduleId, getSlideState, state.phase, state.theoryIndex, state.quizIndex, state.practiceIndex]);
 
+  // Feature 005: Initialize quiz attempt when entering quiz phase
+  const initializeQuizAttempt = useCallback(async () => {
+    if (!lessonId || isAttemptLoading) return;
+
+    setIsAttemptLoading(true);
+    try {
+      const response = await fetch(`/api/lessons/${lessonId}/quiz-attempts`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      const data = await response.json();
+
+      // Handle existing in-progress attempt (409 Conflict)
+      if (response.status === 409 && data.attemptId) {
+        // Load the existing attempt instead
+        const loadResponse = await fetch(`/api/quiz-attempts/${data.attemptId}`);
+        if (loadResponse.ok) {
+          const existingAttempt = await loadResponse.json();
+          setAttemptId(existingAttempt.id);
+          setAttemptQuestions(existingAttempt.questions || []);
+          return;
+        }
+      }
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to create quiz attempt');
+      }
+
+      setAttemptId(data.attemptId);
+      setAttemptQuestions(data.questions || []);
+    } catch (error) {
+      console.error('Failed to initialize quiz attempt:', error);
+    } finally {
+      setIsAttemptLoading(false);
+    }
+  }, [lessonId, isAttemptLoading]);
+
+  // Feature 005: Submit answer to attempt
+  const submitAnswerToAttempt = useCallback(
+    async (questionId: string, answer: string | string[]) => {
+      if (!attemptId) return;
+
+      const currentQuestion = attemptQuestions.find((q) => q.questionId === questionId);
+      if (!currentQuestion) return;
+
+      // Determine the request body based on question type
+      let body: Record<string, unknown>;
+      if (currentQuestion.questionType === 'SHORT_TEXT') {
+        body = { questionId, textAnswer: answer as string };
+      } else if (currentQuestion.questionType === 'MULTIPLE_CHOICE') {
+        // For MULTIPLE_CHOICE, convert optionIds to labels
+        const optionIds = Array.isArray(answer) ? answer : [answer];
+        const labels = optionIds.map((optId) => {
+          const choice = currentQuestion.choices?.find((c) => c.optionId === optId);
+          return choice?.label ?? '';
+        }).filter(Boolean);
+        body = { questionId, selectedLabels: labels };
+      } else {
+        // For SINGLE_CHOICE, convert optionId to label
+        const choice = currentQuestion.choices?.find((c) => c.optionId === answer);
+        body = { questionId, selectedLabel: choice?.label ?? '' };
+      }
+
+      try {
+        const response = await fetch(`/api/quiz-attempts/${attemptId}/answers`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          // Store the server's isCorrect value for this question
+          if (result.isCorrect !== undefined) {
+            setServerIsCorrect((prev) => ({
+              ...prev,
+              [questionId]: result.isCorrect,
+            }));
+          }
+        }
+      } catch (error) {
+        console.error('Failed to submit answer:', error);
+      }
+    },
+    [attemptId, attemptQuestions]
+  );
+
+  // Feature 005: Submit quiz attempt for scoring
+  const submitQuizAttempt = useCallback(async (): Promise<QuizResultResponse | null> => {
+    if (!attemptId) return null;
+
+    try {
+      const response = await fetch(`/api/quiz-attempts/${attemptId}/submit`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to submit quiz attempt');
+      }
+
+      const result: QuizResultResponse = await response.json();
+      return result;
+    } catch (error) {
+      console.error('Failed to submit quiz attempt:', error);
+      return null;
+    }
+  }, [attemptId]);
+
+  // Feature 005: Get current attempt question
+  const currentAttemptQuestion = useMemo(() => {
+    if (state.phase !== 'quiz' || attemptQuestions.length === 0) return null;
+    return attemptQuestions[state.quizIndex] ?? null;
+  }, [state.phase, state.quizIndex, attemptQuestions]);
+
+  // Feature 005: Enhanced setAnswer that also submits to attempt
+  const setAnswerWithAttempt = useCallback(
+    async (questionId: string, answer: string | string[]) => {
+      // Update local state
+      dispatch({ type: 'SET_ANSWER', payload: { questionId, answer } });
+
+      // Submit to attempt if available
+      if (attemptId) {
+        await submitAnswerToAttempt(questionId, answer);
+      }
+    },
+    [attemptId, submitAnswerToAttempt]
+  );
+
+  // Feature 005: Reset attempt state on retry
+  const retryQuizWithAttempt = useCallback(() => {
+    dispatch({ type: 'RETRY_QUIZ' });
+    setAttemptId(null);
+    setAttemptQuestions([]);
+    setServerIsCorrect({});
+  }, []);
+
   return {
     state,
     currentSlide,
@@ -590,13 +799,13 @@ export function useSlideNavigation({
     goToSlide,
     goToTheorySlide,
 
-    setAnswer,
+    setAnswer: setAnswerWithAttempt,
     submitAnswer,
-    retryQuiz,
+    retryQuiz: retryQuizWithAttempt,
 
     canGoNext,
     canGoPrevious,
-    isLoading: false,
+    isLoading: isAttemptLoading,
 
     totalTheorySlides: theorySlides.length,
     totalQuizQuestions: quizQuestions.length,
@@ -606,5 +815,13 @@ export function useSlideNavigation({
     wrongQuestions,
 
     getSlideState,
+
+    // Feature 005: Quiz attempt exports
+    attemptId,
+    attemptQuestions,
+    currentAttemptQuestion,
+    initializeQuizAttempt,
+    submitQuizAttempt,
+    serverIsCorrect,
   };
 }

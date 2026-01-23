@@ -4,6 +4,7 @@ import { useSession, signIn, signOut } from 'next-auth/react';
 import { Button } from '@/components/ui/Button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { ThemeSelector } from '@/components/ui/ThemeSelector';
+import { QuizAttemptHistory } from '@/components/lesson/QuizAttemptHistory';
 
 export default function ProfilePage() {
   const { data: session, status } = useSession();
@@ -143,6 +144,9 @@ export default function ProfilePage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Feature 005: Quiz Attempt History */}
+      <QuizAttemptHistory limit={5} />
 
       <Card>
         <CardHeader>

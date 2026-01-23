@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useCallback } from 'react';
+import { useMemo, useCallback, useState, useEffect } from 'react';
 import { useSlideNavigation } from '@/lib/hooks/useSlideNavigation';
 import { useKeyboardNavigation } from '@/lib/hooks/useKeyboardNavigation';
 import { useSwipeNavigation } from '@/lib/hooks/useSwipeNavigation';
@@ -12,14 +12,22 @@ import { QuizSlide } from './QuizSlide';
 import { QuizResultSlide } from './QuizResultSlide';
 import { PracticeSlide } from './PracticeSlide';
 import { CompletionSlide } from './CompletionSlide';
+import { ExerciseTimerModal } from '../ExerciseTimerModal';
 import { findTheorySlideByTitle } from '@/lib/utils/theory-parser';
 import { parsePracticeSlides } from '@/lib/utils/practice-parser';
 import type { SlideState, QuizSlide as QuizSlideType, TheorySlide as TheorySlideType, PracticeSlide as PracticeSlideType } from '@/types/slides';
+import type { DisplayChoice } from '@/types/quiz';
+import { Button } from '@/components/ui/Button';
 
 interface Lesson {
   id: string;
   theory: string;
   practiceInstructions: string | null;
+  practiceTimerDuration?: number;
+  // Feature 005: Randomization settings
+  shuffleQuestions?: boolean;
+  shuffleAnswers?: boolean;
+  questionsToShow?: number | null;
   quizQuestions: Array<{
     id: string;
     questionText: string;
@@ -125,6 +133,11 @@ export function SlideContainer({
     return parsePracticeSlides(lesson.practiceInstructions);
   }, [lesson.practiceInstructions]);
 
+  // Timer modal state
+  const [isTimerModalOpen, setIsTimerModalOpen] = useState(false);
+  const [isCompletingPractice, setIsCompletingPractice] = useState(false);
+  const [practiceExerciseCompleted, setPracticeExerciseCompleted] = useState(false);
+
   // Initialize navigation hook
   const {
     state,
@@ -146,14 +159,40 @@ export function SlideContainer({
     quizResult,
     wrongQuestions,
     getSlideState,
+    // Feature 005: Quiz attempt
+    attemptId,
+    attemptQuestions,
+    currentAttemptQuestion,
+    initializeQuizAttempt,
+    submitQuizAttempt,
+    serverIsCorrect,
   } = useSlideNavigation({
     moduleId,
+    lessonId: lesson.id,
     theorySlides,
     quizQuestions,
     practiceSlides,
     initialState: initialProgress,
     quizThreshold,
   });
+
+  // Feature 005: Track whether we're using attempt-based quiz flow
+  const useAttemptBasedQuiz = lesson.shuffleQuestions !== false || lesson.shuffleAnswers !== false;
+  const [attemptInitialized, setAttemptInitialized] = useState(false);
+
+  // Feature 005: Initialize quiz attempt when entering quiz phase
+  useEffect(() => {
+    if (phase === 'quiz' && useAttemptBasedQuiz && !attemptInitialized && !attemptId) {
+      initializeQuizAttempt().then(() => setAttemptInitialized(true));
+    }
+  }, [phase, useAttemptBasedQuiz, attemptInitialized, attemptId, initializeQuizAttempt]);
+
+  // Feature 005: Reset attempt state when retrying
+  useEffect(() => {
+    if (phase === 'quiz' && state.quizIndex === 0 && !state.quizAnswers[quizQuestions[0]?.questionId]) {
+      setAttemptInitialized(false);
+    }
+  }, [phase, state.quizIndex, state.quizAnswers, quizQuestions]);
 
   // Handle submit action
   const handleSubmit = useCallback(() => {
@@ -236,6 +275,26 @@ export function SlideContainer({
     }
   }, [state.returnToQuizIndex, goToSlide]);
 
+  // Handle practice completion via timer modal
+  const handlePracticeComplete = useCallback(async () => {
+    setIsCompletingPractice(true);
+    try {
+      const response = await fetch(
+        `/api/progression/module/${moduleId}/practice`,
+        { method: 'POST' }
+      );
+      if (response.ok) {
+        setIsTimerModalOpen(false);
+        setPracticeExerciseCompleted(true);
+        goNext(); // Move to complete phase
+      }
+    } catch (error) {
+      console.error('Failed to complete practice:', error);
+    } finally {
+      setIsCompletingPractice(false);
+    }
+  }, [moduleId, goNext]);
+
   // Render the appropriate slide based on phase
   const renderSlide = () => {
     if (phase === 'theory' && currentSlide) {
@@ -294,7 +353,30 @@ export function SlideContainer({
 
       // Check if current answer is correct
       const currentAnswer = state.quizAnswers[quizSlide.questionId];
-      const isCorrect = checkQuizAnswer(quizSlide, currentAnswer);
+
+      // Feature 005: Get randomized choices from attempt if available
+      let randomizedChoices: DisplayChoice[] | undefined;
+      if (useAttemptBasedQuiz && currentAttemptQuestion?.choices) {
+        randomizedChoices = currentAttemptQuestion.choices.map((c) => ({
+          label: c.label,
+          text: c.text,
+          optionId: c.optionId,
+        }));
+      }
+
+      // Feature 005: Use server-side isCorrect when available, otherwise fall back to client-side calculation
+      let isCorrect: boolean;
+      if (serverIsCorrect[quizSlide.questionId] !== undefined) {
+        // Use the server's authoritative isCorrect value
+        isCorrect = serverIsCorrect[quizSlide.questionId];
+      } else if (randomizedChoices && currentAnswer) {
+        // Fallback: Find the selected choice by optionId and compare its text to correctAnswer
+        const selectedChoice = randomizedChoices.find(c => c.optionId === currentAnswer);
+        const correctAnswerText = quizSlide.correctAnswer;
+        isCorrect = selectedChoice?.text === correctAnswerText;
+      } else {
+        isCorrect = checkQuizAnswer(quizSlide, currentAnswer);
+      }
 
       return (
         <QuizSlide
@@ -309,6 +391,7 @@ export function SlideContainer({
           onReviewTheory={linkedTheorySlide ? goToTheorySlide : undefined}
           linkedTheorySlide={linkedTheorySlide}
           direction={state.direction}
+          randomizedChoices={randomizedChoices}
         />
       );
     }
@@ -318,12 +401,35 @@ export function SlideContainer({
       const practiceSlide = currentSlide as PracticeSlideType;
       if (!practiceSlide) return null;
 
+      const isLastPracticeSlide = state.practiceIndex === totalPracticeSlides - 1;
+
       return (
-        <PracticeSlide
-          key={practiceSlide.id}
-          slide={practiceSlide}
-          direction={state.direction}
-        />
+        <>
+          <PracticeSlide
+            key={practiceSlide.id}
+            slide={practiceSlide}
+            direction={state.direction}
+          />
+          {isLastPracticeSlide && (
+            <div className="flex justify-center py-6">
+              <Button
+                onClick={() => setIsTimerModalOpen(true)}
+                size="lg"
+                className="px-8 text-lg !bg-[var(--ctp-green)] !text-[var(--ctp-base)] hover:opacity-90"
+              >
+                🚀 Lancer l&apos;exercice
+              </Button>
+            </div>
+          )}
+          <ExerciseTimerModal
+            isOpen={isTimerModalOpen}
+            onClose={() => setIsTimerModalOpen(false)}
+            onValidate={handlePracticeComplete}
+            durationSeconds={lesson.practiceTimerDuration || 300}
+            exerciseSummary={lesson.practiceInstructions || ''}
+            isValidating={isCompletingPractice}
+          />
+        </>
       );
     }
 
@@ -375,7 +481,12 @@ export function SlideContainer({
           onPrevious={goPrevious}
           onNext={goNext}
           canGoPrevious={canGoPrevious}
-          canGoNext={canGoNext}
+          canGoNext={
+            // Disable "Terminer" button on last practice slide until exercise is completed
+            phase === 'practice' && state.practiceIndex === totalPracticeSlides - 1
+              ? practiceExerciseCompleted
+              : canGoNext
+          }
           nextLabel={getNextLabel()}
           isLoading={isLoading}
         />

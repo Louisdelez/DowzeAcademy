@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useState, use } from 'react';
+import { useEffect, useState, use, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
+import { Copy, Check } from 'lucide-react';
 
 interface Question {
   id?: string;
@@ -21,7 +22,12 @@ interface LessonData {
   quizThreshold: number;
   practiceType: string;
   practiceInstructions: string;
+  practiceTimerDuration: number;
   questions: Question[];
+  // Feature 005: Quiz Randomization settings
+  shuffleQuestions: boolean;
+  shuffleAnswers: boolean;
+  questionsToShow: number | null;
 }
 
 const PRACTICE_TYPES = [
@@ -47,12 +53,30 @@ export default function LessonEditorPage({ params }: { params: Promise<{ id: str
     quizThreshold: 70,
     practiceType: 'IN_GAME',
     practiceInstructions: '',
+    practiceTimerDuration: 300,
     questions: [],
+    // Feature 005: Quiz Randomization defaults
+    shuffleQuestions: true,
+    shuffleAnswers: true,
+    questionsToShow: null,
   });
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'theory' | 'quiz' | 'practice'>('theory');
+  // Feature 005: Track which UUID was copied
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  // Feature 005: Copy UUID to clipboard
+  const copyToClipboard = useCallback(async (text: string, id: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedId(id);
+      setTimeout(() => setCopiedId(null), 2000);
+    } catch (err) {
+      console.error('Failed to copy:', err);
+    }
+  }, []);
 
   useEffect(() => {
     const fetchLesson = async () => {
@@ -67,7 +91,12 @@ export default function LessonEditorPage({ params }: { params: Promise<{ id: str
               quizThreshold: data.lesson.quizThreshold,
               practiceType: data.lesson.practiceType,
               practiceInstructions: data.lesson.practiceInstructions,
+              practiceTimerDuration: data.lesson.practiceTimerDuration || 300,
               questions: data.lesson.questions || [],
+              // Feature 005: Load randomization settings
+              shuffleQuestions: data.lesson.shuffleQuestions ?? true,
+              shuffleAnswers: data.lesson.shuffleAnswers ?? true,
+              questionsToShow: data.lesson.questionsToShow ?? null,
             });
           }
         }
@@ -214,7 +243,8 @@ export default function LessonEditorPage({ params }: { params: Promise<{ id: str
             <CardHeader>
               <CardTitle>Paramètres du quiz</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-6">
+              {/* Seuil de réussite */}
               <div className="w-48">
                 <Input
                   label="Seuil de réussite (%)"
@@ -230,6 +260,91 @@ export default function LessonEditorPage({ params }: { params: Promise<{ id: str
                   }
                 />
               </div>
+
+              {/* Feature 005: Randomization settings */}
+              <div className="border-t border-gray-200 pt-6">
+                <h3 className="text-sm font-medium text-gray-700 mb-4">
+                  🎲 Randomisation (Feature 005)
+                </h3>
+
+                {/* Questions to show */}
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Nombre de questions à afficher
+                  </label>
+                  <div className="flex items-center gap-3">
+                    <div className="w-24">
+                      <Input
+                        type="number"
+                        min={0}
+                        max={lessonData.questions.length || 100}
+                        value={lessonData.questionsToShow ?? ''}
+                        placeholder="Toutes"
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          setLessonData((prev) => ({
+                            ...prev,
+                            questionsToShow: value === '' ? null : parseInt(value) || null,
+                          }));
+                        }}
+                      />
+                    </div>
+                    <span className="text-sm text-gray-500">
+                      sur {lessonData.questions.length} questions disponibles
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Laissez vide pour afficher toutes les questions. Sinon, un sous-ensemble aléatoire sera sélectionné.
+                  </p>
+                </div>
+
+                {/* Shuffle toggles */}
+                <div className="space-y-3">
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={lessonData.shuffleQuestions}
+                      onChange={(e) =>
+                        setLessonData((prev) => ({
+                          ...prev,
+                          shuffleQuestions: e.target.checked,
+                        }))
+                      }
+                      className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <div>
+                      <span className="text-sm font-medium text-gray-700">
+                        Mélanger l&apos;ordre des questions
+                      </span>
+                      <p className="text-xs text-gray-500">
+                        L&apos;ordre des questions changera à chaque tentative
+                      </p>
+                    </div>
+                  </label>
+
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={lessonData.shuffleAnswers}
+                      onChange={(e) =>
+                        setLessonData((prev) => ({
+                          ...prev,
+                          shuffleAnswers: e.target.checked,
+                        }))
+                      }
+                      className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <div>
+                      <span className="text-sm font-medium text-gray-700">
+                        Mélanger l&apos;ordre des réponses
+                      </span>
+                      <p className="text-xs text-gray-500">
+                        Les options A/B/C/D seront réassignées aléatoirement
+                      </p>
+                    </div>
+                  </label>
+                </div>
+              </div>
             </CardContent>
           </Card>
 
@@ -237,7 +352,30 @@ export default function LessonEditorPage({ params }: { params: Promise<{ id: str
             <Card key={qIndex}>
               <CardHeader>
                 <div className="flex items-center justify-between">
-                  <CardTitle>Question {qIndex + 1}</CardTitle>
+                  <div>
+                    <CardTitle>Question {qIndex + 1}</CardTitle>
+                    {/* Feature 005: Display question UUID (T036, T037) */}
+                    {question.id && (
+                      <button
+                        type="button"
+                        onClick={() => copyToClipboard(question.id!, `q-${question.id}`)}
+                        className="flex items-center gap-1 mt-1 text-xs text-gray-400 hover:text-gray-600 transition-colors font-mono"
+                        title="Cliquer pour copier l'UUID"
+                      >
+                        {copiedId === `q-${question.id}` ? (
+                          <>
+                            <Check className="w-3 h-3 text-green-500" />
+                            <span className="text-green-500">Copié!</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-3 h-3" />
+                            <span>{question.id.slice(0, 8)}...</span>
+                          </>
+                        )}
+                      </button>
+                    )}
+                  </div>
                   <Button
                     variant="ghost"
                     size="sm"
@@ -288,44 +426,76 @@ export default function LessonEditorPage({ params }: { params: Promise<{ id: str
 
                 {question.questionType !== 'SHORT_TEXT' && question.options && (
                   <div className="space-y-2">
-                    <label className="block text-sm font-medium text-gray-700">Options</label>
-                    {question.options.map((option, oIndex) => (
-                      <div key={option.id} className="flex items-center gap-2">
-                        <input
-                          type={question.questionType === 'MULTIPLE_CHOICE' ? 'checkbox' : 'radio'}
-                          name={`correct-${qIndex}`}
-                          checked={
-                            question.questionType === 'MULTIPLE_CHOICE'
-                              ? (question.correctAnswer as string[]).includes(option.id)
-                              : question.correctAnswer === option.id
-                          }
-                          onChange={(e) => {
-                            if (question.questionType === 'MULTIPLE_CHOICE') {
-                              const current = question.correctAnswer as string[];
-                              updateQuestion(qIndex, {
-                                correctAnswer: e.target.checked
-                                  ? [...current, option.id]
-                                  : current.filter((id) => id !== option.id),
-                              });
-                            } else {
-                              updateQuestion(qIndex, { correctAnswer: option.id });
-                            }
-                          }}
-                          className="w-4 h-4"
-                        />
-                        <input
-                          type="text"
-                          value={option.text}
-                          onChange={(e) => {
-                            const newOptions = [...question.options!];
-                            newOptions[oIndex] = { ...option, text: e.target.value };
-                            updateQuestion(qIndex, { options: newOptions });
-                          }}
-                          placeholder={`Option ${option.id.toUpperCase()}`}
-                          className="flex-1 border border-gray-300 rounded-lg px-3 py-2"
-                        />
-                      </div>
-                    ))}
+                    <label className="block text-sm font-medium text-gray-700">
+                      Options
+                      <span className="text-xs text-gray-400 font-normal ml-2">
+                        (cochez pour marquer comme correcte)
+                      </span>
+                    </label>
+                    {question.options.map((option, oIndex) => {
+                      const isCorrect = question.questionType === 'MULTIPLE_CHOICE'
+                        ? (question.correctAnswer as string[]).includes(option.id)
+                        : question.correctAnswer === option.id;
+
+                      return (
+                        <div key={option.id} className="flex items-center gap-2">
+                          {/* Correct indicator (T038: removed A/B/C/D labels) */}
+                          <input
+                            type={question.questionType === 'MULTIPLE_CHOICE' ? 'checkbox' : 'radio'}
+                            name={`correct-${qIndex}`}
+                            checked={isCorrect}
+                            onChange={(e) => {
+                              if (question.questionType === 'MULTIPLE_CHOICE') {
+                                const current = question.correctAnswer as string[];
+                                updateQuestion(qIndex, {
+                                  correctAnswer: e.target.checked
+                                    ? [...current, option.id]
+                                    : current.filter((id) => id !== option.id),
+                                });
+                              } else {
+                                updateQuestion(qIndex, { correctAnswer: option.id });
+                              }
+                            }}
+                            className="w-4 h-4"
+                            title={isCorrect ? 'Réponse correcte' : 'Marquer comme correcte'}
+                          />
+
+                          {/* Option text input */}
+                          <input
+                            type="text"
+                            value={option.text}
+                            onChange={(e) => {
+                              const newOptions = [...question.options!];
+                              newOptions[oIndex] = { ...option, text: e.target.value };
+                              updateQuestion(qIndex, { options: newOptions });
+                            }}
+                            placeholder={`Option ${oIndex + 1}`}
+                            className={`flex-1 border rounded-lg px-3 py-2 ${
+                              isCorrect ? 'border-green-400 bg-green-50' : 'border-gray-300'
+                            }`}
+                          />
+
+                          {/* Feature 005: Option UUID with copy (T039) */}
+                          {option.id.length > 8 && (
+                            <button
+                              type="button"
+                              onClick={() => copyToClipboard(option.id, `o-${option.id}`)}
+                              className="flex items-center gap-1 px-2 py-1 text-xs text-gray-400 hover:text-gray-600 transition-colors font-mono rounded hover:bg-gray-100"
+                              title="Cliquer pour copier l'UUID de l'option"
+                            >
+                              {copiedId === `o-${option.id}` ? (
+                                <Check className="w-3 h-3 text-green-500" />
+                              ) : (
+                                <>
+                                  <Copy className="w-3 h-3" />
+                                  <span className="hidden sm:inline">{option.id.slice(0, 6)}...</span>
+                                </>
+                              )}
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
                     <Button variant="ghost" size="sm" onClick={() => addOption(qIndex)}>
                       + Ajouter une option
                     </Button>
@@ -379,6 +549,29 @@ export default function LessonEditorPage({ params }: { params: Promise<{ id: str
                   </option>
                 ))}
               </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Durée du timer (minutes)
+              </label>
+              <div className="w-32">
+                <Input
+                  type="number"
+                  min={1}
+                  max={60}
+                  value={Math.floor(lessonData.practiceTimerDuration / 60)}
+                  onChange={(e) =>
+                    setLessonData((prev) => ({
+                      ...prev,
+                      practiceTimerDuration: (parseInt(e.target.value) || 5) * 60,
+                    }))
+                  }
+                />
+              </div>
+              <p className="text-sm text-gray-500 mt-1">
+                Durée minimum avant que l&apos;apprenant puisse valider l&apos;exercice (1-60 minutes).
+              </p>
             </div>
 
             <div>

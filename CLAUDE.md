@@ -28,9 +28,9 @@ npm test && npm run lint
 TypeScript 5.x (frontend + backend): Follow standard conventions
 
 ## Recent Changes
+- 005-quiz-randomization: Added TypeScript 5.x (Next.js 16.1.4, React 19) + Prisma 7.3, NextAuth 4.24, TanStack Query 5.90, Tailwind 4
 - 004-slides-pedagogy-v2: Added TypeScript 5.x (Next.js 16.1.4, React 19) + Prisma 7.3, NextAuth 4.24, TanStack Query 5.90, Tailwind 4
 - 003-catppuccin-cursors-icons: Added TypeScript 5.x (Next.js 16.1.4, React 19) + Next.js, React, TailwindCSS 4, CSS custom properties
-- 002-catppuccin-design-system: Added TypeScript 5.x + Next.js 16.x, React 19.x, Tailwind CSS 4.x, Prisma 7.x
 
 
 <!-- MANUAL ADDITIONS START -->

@@ -487,9 +487,26 @@ Après 4 dragons, vous obtenez une âme puissante !
       },
     });
 
-    // Create quiz questions
+    // Create quiz questions with QuizOption records (Feature 005)
     for (let j = 0; j < moduleData.questions.length; j++) {
       const q = moduleData.questions[j];
+
+      // Build choices data for QuizOption model
+      const choicesData = q.options?.map((opt, optIndex) => {
+        // Determine if this option is correct
+        let isCorrect = false;
+        if (Array.isArray(q.correctAnswer)) {
+          isCorrect = q.correctAnswer.includes(opt.id);
+        } else {
+          isCorrect = q.correctAnswer === opt.id;
+        }
+        return {
+          text: opt.text,
+          isCorrect,
+          order: optIndex,
+        };
+      }) ?? [];
+
       await prisma.quizQuestion.create({
         data: {
           lessonId: lesson.id,
@@ -500,6 +517,8 @@ Après 4 dragons, vous obtenez une âme puissante !
           feedback: q.feedback,
           order: j,
           linkedTheorySection: q.linkedTheorySection,
+          // Feature 005: Create QuizOption records directly
+          choices: choicesData.length > 0 ? { create: choicesData } : undefined,
         },
       });
     }

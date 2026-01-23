@@ -31,7 +31,19 @@ export async function PUT(request: Request, { params }: RouteParams) {
   try {
     const { moduleId } = await params;
     const body = await request.json();
-    const { theoryContent, quizThreshold, practiceType, practiceInstructions, questions, mode } = body;
+    const {
+      theoryContent,
+      quizThreshold,
+      practiceType,
+      practiceInstructions,
+      practiceTimerDuration,
+      questions,
+      mode,
+      // Feature 005: Randomization settings
+      shuffleQuestions,
+      shuffleAnswers,
+      questionsToShow,
+    } = body;
 
     // Validate required fields
     if (!theoryContent || !practiceType || !practiceInstructions) {
@@ -47,7 +59,12 @@ export async function PUT(request: Request, { params }: RouteParams) {
       quizThreshold: quizThreshold || 70,
       practiceType,
       practiceInstructions,
+      practiceTimerDuration: practiceTimerDuration || 300,
       mode,
+      // Feature 005: Randomization settings
+      shuffleQuestions,
+      shuffleAnswers,
+      questionsToShow,
     });
 
     // Update questions if provided

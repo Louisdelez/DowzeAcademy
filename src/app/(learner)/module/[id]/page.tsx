@@ -63,7 +63,12 @@ export default async function ModulePage({ params }: ModulePageProps) {
           quizThreshold: module.lesson.quizThreshold,
           practiceType: module.lesson.practiceType,
           practiceInstructions: module.lesson.practiceInstructions,
+          practiceTimerDuration: module.lesson.practiceTimerDuration ?? undefined,
           mode: module.lesson.mode,
+          // Feature 005: Randomization settings
+          shuffleQuestions: module.lesson.shuffleQuestions,
+          shuffleAnswers: module.lesson.shuffleAnswers,
+          questionsToShow: module.lesson.questionsToShow,
           questions: module.lesson.questions.map((q) => ({
             id: q.id,
             questionText: q.questionText,

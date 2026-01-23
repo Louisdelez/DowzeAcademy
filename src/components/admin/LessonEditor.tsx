@@ -12,6 +12,7 @@ export interface LessonData {
   quizThreshold: number;
   practiceType: string;
   practiceInstructions: string;
+  practiceTimerDuration: number; // Duration in seconds (default 300 = 5 minutes)
   questions: QuizQuestion[];
   mode: 'LEGACY' | 'SLIDES';
 }
@@ -33,6 +34,7 @@ export function LessonEditor({ initialData, onChange }: LessonEditorProps) {
   const [data, setData] = useState<LessonData>({
     ...initialData,
     mode: initialData.mode || 'LEGACY',
+    practiceTimerDuration: initialData.practiceTimerDuration || 300,
   });
 
   // Parse theory content to extract section titles for linking
@@ -264,6 +266,26 @@ export function LessonEditor({ initialData, onChange }: LessonEditorProps) {
                   </option>
                 ))}
               </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Durée du timer (minutes)
+              </label>
+              <div className="w-32">
+                <Input
+                  type="number"
+                  min={1}
+                  max={60}
+                  value={Math.floor(data.practiceTimerDuration / 60)}
+                  onChange={(e) =>
+                    updateData({ practiceTimerDuration: (parseInt(e.target.value) || 5) * 60 })
+                  }
+                />
+              </div>
+              <p className="text-sm text-gray-500 mt-2">
+                Durée minimum avant que l&apos;apprenant puisse valider l&apos;exercice (1-60 minutes).
+              </p>
             </div>
 
             <div>

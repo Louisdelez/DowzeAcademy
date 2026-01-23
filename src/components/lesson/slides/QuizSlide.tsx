@@ -4,6 +4,13 @@ import { useMemo } from 'react';
 import { FeedbackPanel } from './FeedbackPanel';
 import type { QuizSlide as QuizSlideType, SlideDirection, TheorySlide } from '@/types/slides';
 
+// Feature 005: Randomized choice display type
+interface RandomizedChoice {
+  label: string; // A, B, C, D
+  text: string;
+  optionId: string;
+}
+
 interface QuizSlideProps {
   question: QuizSlideType;
   selectedAnswer: string | string[] | null;
@@ -15,6 +22,8 @@ interface QuizSlideProps {
   onReviewTheory?: (slideIndex: number) => void;
   linkedTheorySlide?: TheorySlide | null;
   direction: SlideDirection;
+  // Feature 005: Optional randomized choices (when using attempt-based flow)
+  randomizedChoices?: RandomizedChoice[];
 }
 
 export function QuizSlide({
@@ -28,6 +37,7 @@ export function QuizSlide({
   onReviewTheory,
   linkedTheorySlide,
   direction,
+  randomizedChoices,
 }: QuizSlideProps) {
   const animationClass = direction === 'forward' ? 'slide-enter-forward' : 'slide-enter-backward';
 
@@ -132,7 +142,61 @@ export function QuizSlide({
               "
             />
           </div>
+        ) : randomizedChoices && randomizedChoices.length > 0 ? (
+          // Feature 005: Render randomized choices with labels
+          <div
+            className="space-y-3"
+            role={isMultipleChoice ? 'group' : 'radiogroup'}
+            aria-label="Options de réponse"
+          >
+            {randomizedChoices.map((choice) => {
+              const isSelected = isOptionSelected(choice.optionId);
+
+              return (
+                <button
+                  key={choice.optionId}
+                  type="button"
+                  onClick={() => handleOptionClick(choice.optionId)}
+                  disabled={showFeedback}
+                  role={isMultipleChoice ? 'checkbox' : 'radio'}
+                  aria-checked={isSelected}
+                  className={`
+                    w-full flex items-center gap-4 p-4 rounded-lg
+                    text-left transition-all duration-200
+                    disabled:cursor-not-allowed
+                    ${isSelected
+                      ? 'bg-[color-mix(in_srgb,var(--color-primary)_15%,transparent)] border-2 border-[var(--color-primary)]'
+                      : 'bg-[var(--color-surface-1)] border-2 border-transparent hover:border-[var(--color-overlay)]'
+                    }
+                    ${showFeedback ? 'opacity-80' : ''}
+                  `}
+                >
+                  {/* Option letter/checkbox */}
+                  <span
+                    className={`
+                      w-8 h-8 flex items-center justify-center rounded-lg shrink-0
+                      font-medium text-sm transition-colors
+                      ${isSelected
+                        ? 'bg-[var(--color-primary)] text-[var(--color-bg)]'
+                        : 'bg-[var(--color-surface-2)] text-[var(--color-subtext)]'
+                      }
+                    `}
+                  >
+                    {isMultipleChoice ? (isSelected ? '✓' : choice.label) : choice.label}
+                  </span>
+
+                  {/* Option text */}
+                  <span
+                    className={`flex-1 ${isSelected ? 'text-[var(--color-text)]' : 'text-[var(--color-text-secondary)]'}`}
+                  >
+                    {choice.text}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
         ) : (
+          // Legacy mode: use question.options directly
           <div
             className="space-y-3"
             role={isMultipleChoice ? 'group' : 'radiogroup'}
