@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation';
-import { getPackWithModules } from '@/lib/services/content-service';
+import { getPackWithDisciplines } from '@/lib/services/content-service';
 import { Breadcrumb } from '@/components/ui/Breadcrumb';
-import { PackModules } from './PackModules';
+import { PackDisciplines } from './PackDisciplines';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,7 +11,7 @@ interface PackPageProps {
 
 export async function generateMetadata({ params }: PackPageProps) {
   const { id } = await params;
-  const pack = await getPackWithModules(id);
+  const pack = await getPackWithDisciplines(id);
   return {
     title: pack?.name || 'Pack',
   };
@@ -19,7 +19,7 @@ export async function generateMetadata({ params }: PackPageProps) {
 
 export default async function PackPage({ params }: PackPageProps) {
   const { id } = await params;
-  const pack = await getPackWithModules(id);
+  const pack = await getPackWithDisciplines(id);
 
   if (!pack) {
     notFound();
@@ -52,17 +52,17 @@ export default async function PackPage({ params }: PackPageProps) {
         className="text-xl font-semibold mb-4"
         style={{ color: 'var(--color-text)' }}
       >
-        Modules
+        Chapitres
       </h2>
 
-      {pack.modules.length === 0 ? (
+      {pack.disciplines.length === 0 ? (
         <div className="text-center py-12">
           <p style={{ color: 'var(--color-text-muted)' }}>
-            Aucun module disponible dans ce parcours.
+            Aucun chapitre disponible dans cette formation.
           </p>
         </div>
       ) : (
-        <PackModules packId={id} modules={pack.modules} />
+        <PackDisciplines packId={id} disciplines={pack.disciplines} />
       )}
     </div>
   );

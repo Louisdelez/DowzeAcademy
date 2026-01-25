@@ -2,23 +2,23 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
-import { ModuleCard } from '@/components/cards/ModuleCard';
+import { DisciplineCard, type DisciplineStatus } from '@/components/cards/DisciplineCard';
 import { ProgressStats } from '@/components/progression/ProgressStats';
 import { StalenessIndicator } from '@/components/connectivity/StalenessIndicator';
-import { ModuleProgressStatus } from '@/types/models';
-import type { Module, ProgressStats as ProgressStatsType } from '@/types/models';
+import type { Discipline, ProgressStats as ProgressStatsType } from '@/types/models';
 
-interface DisciplineModulesProps {
-  disciplineId: string;
-  modules: Module[];
+interface PackDisciplinesProps {
+  packId: string;
+  disciplines: Discipline[];
 }
 
 interface ProgressionData {
   stats: ProgressStatsType;
-  moduleStatuses: Record<string, ModuleProgressStatus>;
+  disciplineStats: Record<string, ProgressStatsType>;
+  disciplineStatuses: Record<string, DisciplineStatus>;
 }
 
-export function DisciplineModules({ disciplineId, modules }: DisciplineModulesProps) {
+export function PackDisciplines({ packId, disciplines }: PackDisciplinesProps) {
   const { data: session, status } = useSession();
   const [progression, setProgression] = useState<ProgressionData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -27,7 +27,7 @@ export function DisciplineModules({ disciplineId, modules }: DisciplineModulesPr
   const fetchProgression = useCallback(async () => {
     if (status === 'authenticated') {
       try {
-        const response = await fetch(`/api/progression/discipline/${disciplineId}`);
+        const response = await fetch(`/api/progression/pack/${packId}`);
         if (response.ok) {
           const data = await response.json();
           setProgression(data);
@@ -38,7 +38,7 @@ export function DisciplineModules({ disciplineId, modules }: DisciplineModulesPr
       }
     }
     setIsLoading(false);
-  }, [disciplineId, status]);
+  }, [packId, status]);
 
   useEffect(() => {
     if (status !== 'loading') {
@@ -46,20 +46,12 @@ export function DisciplineModules({ disciplineId, modules }: DisciplineModulesPr
     }
   }, [fetchProgression, status]);
 
-  const getModuleStatus = (moduleId: string, index: number): ModuleProgressStatus => {
-    if (progression?.moduleStatuses[moduleId]) {
-      return progression.moduleStatuses[moduleId];
-    }
-    // Default: first module available, others locked
-    return index === 0 ? ModuleProgressStatus.AVAILABLE : ModuleProgressStatus.LOCKED;
-  };
-
   if (isLoading) {
     return (
       <div className="flex flex-col gap-3">
-        {modules.map((module) => (
+        {disciplines.map((discipline) => (
           <div
-            key={module.id}
+            key={discipline.id}
             className="h-24 rounded-lg animate-pulse"
             style={{ backgroundColor: 'var(--color-bg-tertiary)' }}
           />
@@ -112,19 +104,30 @@ export function DisciplineModules({ disciplineId, modules }: DisciplineModulesPr
             >
               Connectez-vous
             </a>{' '}
-            pour suivre votre progression et débloquer les modules.
+            pour suivre votre progression.
           </p>
         </div>
       )}
 
       <div className="flex flex-col gap-3">
-        {modules.map((module, index) => (
-          <ModuleCard
-            key={module.id}
-            module={module}
-            status={getModuleStatus(module.id, index)}
-          />
-        ))}
+        {disciplines.map((discipline, index) => {
+          // Determine status: use API data if authenticated, otherwise first is AVAILABLE, rest are LOCKED
+          let disciplineStatus: DisciplineStatus = 'AVAILABLE';
+          if (progression?.disciplineStatuses?.[discipline.id]) {
+            disciplineStatus = progression.disciplineStatuses[discipline.id];
+          } else if (status === 'unauthenticated') {
+            disciplineStatus = index === 0 ? 'AVAILABLE' : 'LOCKED';
+          }
+
+          return (
+            <DisciplineCard
+              key={discipline.id}
+              discipline={discipline}
+              progress={progression?.disciplineStats?.[discipline.id]}
+              status={disciplineStatus}
+            />
+          );
+        })}
       </div>
     </div>
   );
