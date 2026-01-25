@@ -80,6 +80,10 @@ export default async function ModulePage({ params }: ModulePageProps) {
             explanation: q.feedback as string | null,
           })),
         }}
+        learningContext={{
+          domainName: module.discipline.pack.domain.name,
+          disciplineName: module.discipline.name,
+        }}
       />
     </div>
   );

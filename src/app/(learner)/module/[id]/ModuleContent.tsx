@@ -33,11 +33,17 @@ interface Lesson {
   questions: Question[];
 }
 
+interface LearningContext {
+  domainName: string;
+  disciplineName: string;
+}
+
 interface ModuleContentProps {
   moduleId: string;
   moduleName: string;
   disciplineId?: string;
   lesson: Lesson;
+  learningContext?: LearningContext;
 }
 
 interface ProgressionState {
@@ -48,7 +54,7 @@ interface ProgressionState {
   completedAt: string | null;
 }
 
-export function ModuleContent({ moduleId, moduleName, lesson }: ModuleContentProps) {
+export function ModuleContent({ moduleId, moduleName, lesson, learningContext }: ModuleContentProps) {
   const { status } = useSession();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
@@ -170,6 +176,7 @@ export function ModuleContent({ moduleId, moduleName, lesson }: ModuleContentPro
       shuffleQuestions={lesson.shuffleQuestions}
       shuffleAnswers={lesson.shuffleAnswers}
       questionsToShow={lesson.questionsToShow}
+      learningContext={learningContext}
     />
   );
 }

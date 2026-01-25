@@ -18,6 +18,9 @@ import { parsePracticeSlides } from '@/lib/utils/practice-parser';
 import type { SlideState, QuizSlide as QuizSlideType, TheorySlide as TheorySlideType, PracticeSlide as PracticeSlideType } from '@/types/slides';
 import type { DisplayChoice } from '@/types/quiz';
 import { Button } from '@/components/ui/Button';
+import { AIPromptButton } from '../AIPromptButton';
+import { SearchPromptButton } from '../SearchPromptButton';
+import { NotesButton } from '../NotesButton';
 
 interface Lesson {
   id: string;
@@ -59,6 +62,11 @@ function checkQuizAnswer(
   return correct === answer;
 }
 
+interface LearningContext {
+  domainName: string;
+  disciplineName: string;
+}
+
 interface SlideContainerProps {
   moduleId: string;
   moduleName: string;
@@ -66,6 +74,7 @@ interface SlideContainerProps {
   initialProgress?: SlideState | null;
   quizThreshold?: number;
   onComplete: () => void;
+  learningContext?: LearningContext;
 }
 
 export function SlideContainer({
@@ -75,6 +84,7 @@ export function SlideContainer({
   initialProgress,
   quizThreshold = 70,
   onComplete,
+  learningContext,
 }: SlideContainerProps) {
   // Parse theory content into slides
   const theorySlides = useMemo(() => {
@@ -221,12 +231,17 @@ export function SlideContainer({
   });
 
   // Get current slide count based on phase
+  // Feature 005: Use attemptQuestions.length for quiz when available (respects questionsToShow)
+  const effectiveQuizCount = useAttemptBasedQuiz && attemptQuestions.length > 0
+    ? attemptQuestions.length
+    : totalQuizQuestions;
+
   const getCurrentSlideCount = () => {
     switch (phase) {
       case 'theory':
         return totalTheorySlides;
       case 'quiz':
-        return totalQuizQuestions;
+        return effectiveQuizCount;
       case 'practice':
         return totalPracticeSlides;
       default:
@@ -312,7 +327,25 @@ export function SlideContainer({
 
     // Quiz phase
     if (phase === 'quiz') {
-      const quizSlide = currentSlide as QuizSlideType;
+      let quizSlide = currentSlide as QuizSlideType;
+
+      // Feature 005: When using attempt-based quiz with shuffled questions,
+      // use question data from currentAttemptQuestion to ensure correct matching
+      if (useAttemptBasedQuiz && currentAttemptQuestion) {
+        // Build quizSlide from attempt question data to ensure question/options match
+        quizSlide = {
+          id: `quiz-slide-${state.quizIndex}`,
+          questionId: currentAttemptQuestion.questionId,
+          questionText: currentAttemptQuestion.questionText,
+          questionType: currentAttemptQuestion.questionType as 'SINGLE_CHOICE' | 'MULTIPLE_CHOICE' | 'SHORT_TEXT',
+          options: null, // Not used when randomizedChoices is provided
+          correctAnswer: '', // Not needed for display, server handles validation
+          feedback: currentAttemptQuestion.feedback,
+          linkedTheorySection: currentAttemptQuestion.linkedTheorySection,
+          slideNumber: state.quizIndex + 1,
+          totalQuestions: attemptQuestions.length > 0 ? attemptQuestions.length : totalQuizQuestions,
+        };
+      }
 
       // Show quiz result slide if we have results
       if (quizResult) {
@@ -447,8 +480,32 @@ export function SlideContainer({
     return null;
   };
 
+  // Combine all theory slides content for the AI prompt
+  const fullTheoryContent = useMemo(() => {
+    return theorySlides.map(slide => `## ${slide.title}\n\n${slide.content}`).join('\n\n');
+  }, [theorySlides]);
+
   return (
     <div className="flex flex-col h-full min-h-[calc(100vh-4rem)]">
+      {/* Floating buttons - Show during theory, quiz, and practice phases */}
+      {phase !== 'complete' && learningContext && (
+        <>
+          <AIPromptButton
+            domainName={learningContext.domainName}
+            disciplineName={learningContext.disciplineName}
+            moduleName={moduleName}
+            slideTitle={moduleName}
+            slideContent={fullTheoryContent}
+          />
+          <SearchPromptButton
+            domainName={learningContext.domainName}
+            disciplineName={learningContext.disciplineName}
+            moduleName={moduleName}
+          />
+          <NotesButton moduleId={moduleId} />
+        </>
+      )}
+
       {/* Progress indicator */}
       <SlideProgress
         currentPhase={phase}
@@ -460,7 +517,7 @@ export function SlideContainer({
             completed: phase !== 'theory',
           },
           quiz: {
-            total: totalQuizQuestions,
+            total: effectiveQuizCount,
             completed: phase === 'practice' || phase === 'complete',
           },
           practice: {

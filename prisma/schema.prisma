@@ -128,6 +128,7 @@ model Module {
   discipline   Discipline        @relation(fields: [disciplineId], references: [id])
   lesson       Lesson?
   progressions UserProgression[]
+  notes        UserNote[]
 
   @@index([disciplineId, status, order])
   @@index([deletedAt])
@@ -205,6 +206,65 @@ model User {
   updatedAt       DateTime @updatedAt
 
   progressions UserProgression[]
+  notes        UserNote[]
+  noteRatings  NoteRating[]
+}
+
+// ============================================
+// NOTES MODELS
+// ============================================
+
+enum NoteType {
+  TEXT
+  LINK
+}
+
+model UserNote {
+  id        String   @id @default(uuid())
+  userId    String
+  moduleId  String
+  type      NoteType
+
+  // For TEXT notes
+  title     String?  @db.VarChar(100)
+  content   String?  @db.VarChar(3000)
+
+  // For LINK notes
+  linkName        String?  @db.VarChar(255)
+  linkUrl         String?  @db.VarChar(2048)
+  linkPreviewTitle       String?  @db.VarChar(255)
+  linkPreviewDescription String?  @db.Text
+  linkPreviewImage       String?  @db.VarChar(2048)
+
+  // Community sharing
+  isPublic  Boolean  @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user    User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  module  Module       @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  ratings NoteRating[]
+
+  @@index([userId, moduleId])
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([moduleId, isPublic])
+}
+
+// Community note ratings (5-star system)
+model NoteRating {
+  id        String   @id @default(uuid())
+  noteId    String
+  userId    String
+  stars     Int      // 1-5 stars
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  note UserNote @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  user User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([noteId, userId])
+  @@index([noteId])
 }
 
 model AdminUser {

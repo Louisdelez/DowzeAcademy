@@ -30,6 +30,11 @@ interface QuizFeedback {
   feedback: string;
 }
 
+interface LearningContext {
+  domainName: string;
+  disciplineName: string;
+}
+
 interface GuidedModuleFlowProps {
   moduleId: string;
   lessonId?: string; // Feature 005: Needed for quiz attempt API
@@ -48,6 +53,8 @@ interface GuidedModuleFlowProps {
   shuffleQuestions?: boolean;
   shuffleAnswers?: boolean;
   questionsToShow?: number | null;
+  // AI Prompt context
+  learningContext?: LearningContext;
 }
 
 type Phase = 'theory' | 'quiz' | 'practice' | 'complete';
@@ -69,6 +76,7 @@ export function GuidedModuleFlow({
   shuffleQuestions,
   shuffleAnswers,
   questionsToShow,
+  learningContext,
 }: GuidedModuleFlowProps) {
   const router = useRouter();
 
@@ -100,6 +108,7 @@ export function GuidedModuleFlow({
         initialProgress={initialSlideState}
         quizThreshold={quizThreshold}
         onComplete={() => router.back()}
+        learningContext={learningContext}
       />
     );
   }
@@ -386,7 +395,10 @@ export function GuidedModuleFlow({
       <div className="flex-1 overflow-y-auto pb-40">
         {/* Theory slides */}
         {phase === 'theory' && currentTheorySlide && (
-          <TheorySlide slide={currentTheorySlide} direction="forward" />
+          <TheorySlide
+            slide={currentTheorySlide}
+            direction="forward"
+          />
         )}
 
         {/* Quiz slides */}
