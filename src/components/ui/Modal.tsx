@@ -9,6 +9,7 @@ interface ModalProps {
   onClose: () => void;
   title?: string;
   children: ReactNode;
+  footer?: ReactNode;
   size?: 'sm' | 'md' | 'lg' | 'xl';
   closeOnOverlayClick?: boolean;
   closeOnEscape?: boolean;
@@ -26,6 +27,7 @@ export function Modal({
   onClose,
   title,
   children,
+  footer,
   size = 'md',
   closeOnOverlayClick = true,
   closeOnEscape = true,
@@ -70,16 +72,17 @@ export function Modal({
 
       {/* Modal content */}
       <div
-        className={`relative w-full ${sizeClasses[size]} rounded-xl shadow-lg transform transition-all`}
+        className={`relative w-full ${sizeClasses[size]} rounded-xl shadow-lg transform transition-all flex flex-col`}
         style={{
           backgroundColor: 'var(--color-bg-elevated)',
           border: '1px solid var(--color-border)',
+          maxHeight: 'calc(100vh - 2rem)',
         }}
       >
         {/* Header */}
         {title && (
           <div
-            className="flex items-center justify-between px-6 py-4 border-b"
+            className="flex items-center justify-between px-6 py-4 border-b shrink-0"
             style={{ borderColor: 'var(--color-border-light)' }}
           >
             <h2
@@ -100,7 +103,17 @@ export function Modal({
         )}
 
         {/* Body */}
-        <div className="px-6 py-4">{children}</div>
+        <div className="px-6 py-4 overflow-y-auto flex-1 min-h-0">{children}</div>
+
+        {/* Footer */}
+        {footer && (
+          <div
+            className="flex items-center justify-end gap-3 px-6 py-4 border-t shrink-0"
+            style={{ borderColor: 'var(--color-border-light)' }}
+          >
+            {footer}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -119,7 +132,7 @@ interface ModalFooterProps {
 export function ModalFooter({ children, className = '' }: ModalFooterProps) {
   return (
     <div
-      className={`flex items-center justify-end gap-3 px-6 py-4 border-t ${className}`}
+      className={`flex items-center justify-end gap-3 px-6 py-4 border-t shrink-0 ${className}`}
       style={{ borderColor: 'var(--color-border-light)' }}
     >
       {children}
