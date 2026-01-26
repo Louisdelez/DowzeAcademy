@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation';
+import Image from 'next/image';
 import { getDomainWithPacks } from '@/lib/services/content-service';
 import { PackCard } from '@/components/cards/PackCard';
 import { Breadcrumb } from '@/components/ui/Breadcrumb';
@@ -7,6 +8,24 @@ export const dynamic = 'force-dynamic';
 
 interface DomainPageProps {
   params: Promise<{ id: string }>;
+}
+
+function DomainIcon({ icon }: { icon: string }) {
+  const isImagePath = icon.startsWith('/') || icon.startsWith('http');
+
+  if (isImagePath) {
+    return (
+      <Image
+        src={icon}
+        alt=""
+        width={40}
+        height={40}
+        className="flex-shrink-0"
+      />
+    );
+  }
+
+  return <span className="text-4xl">{icon}</span>;
 }
 
 export async function generateMetadata({ params }: DomainPageProps) {
@@ -33,7 +52,7 @@ export default async function DomainPage({ params }: DomainPageProps) {
 
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-2">
-          {domain.icon && <span className="text-4xl">{domain.icon}</span>}
+          {domain.icon && <DomainIcon icon={domain.icon} />}
           <h1
             className="text-3xl font-bold"
             style={{ color: 'var(--color-text)' }}
