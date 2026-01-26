@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import { Sparkles, X, ExternalLink, Check } from 'lucide-react';
+import Image from 'next/image';
 
 interface AIService {
   name: string;
@@ -13,39 +14,51 @@ interface AIService {
 const AI_SERVICES: AIService[] = [
   {
     name: 'ChatGPT',
-    icon: '🤖',
+    icon: '/icons/services/chatgpt.svg',
     url: 'https://chat.openai.com/',
     color: '#10a37f',
   },
   {
     name: 'Claude',
-    icon: '🧠',
+    icon: '/icons/services/claude.svg',
     url: 'https://claude.ai/',
     color: '#d97706',
   },
   {
     name: 'Gemini',
-    icon: '✨',
+    icon: '/icons/services/gemini.svg',
     url: 'https://gemini.google.com/',
     color: '#4285f4',
   },
   {
     name: 'Grok',
-    icon: '🚀',
+    icon: '/icons/services/grok.svg',
     url: 'https://grok.x.ai/',
     color: '#1da1f2',
   },
   {
     name: 'DeepSeek',
-    icon: '🔍',
+    icon: '/icons/services/deepseek.svg',
     url: 'https://chat.deepseek.com/',
     color: '#6366f1',
   },
   {
     name: 'Mistral',
-    icon: '🌬️',
+    icon: '/icons/services/mistral.svg',
     url: 'https://chat.mistral.ai/',
     color: '#ff7000',
+  },
+  {
+    name: 'Meta AI',
+    icon: '/icons/services/meta.svg',
+    url: 'https://www.meta.ai/',
+    color: '#0082FB',
+  },
+  {
+    name: 'Perplexity',
+    icon: '/icons/services/perplexity.svg',
+    url: 'https://www.perplexity.ai/',
+    color: '#22B8CD',
   },
 ];
 
@@ -200,7 +213,13 @@ N'hésite pas à me demander ce que je ne comprends pas précisément.`;
                     borderColor: 'var(--color-border-light)',
                   }}
                 >
-                  <span className="text-2xl">{service.icon}</span>
+                  <Image
+                    src={service.icon}
+                    alt={service.name}
+                    width={28}
+                    height={28}
+                    className="flex-shrink-0"
+                  />
                   <div className="flex-1 text-left">
                     <span
                       className="font-medium text-sm block"

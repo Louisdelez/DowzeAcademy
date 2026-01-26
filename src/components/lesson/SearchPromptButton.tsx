@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import { Search, X, ExternalLink, Check } from 'lucide-react';
+import Image from 'next/image';
 
 interface SearchEngine {
   name: string;
@@ -13,37 +14,49 @@ interface SearchEngine {
 const SEARCH_ENGINES: SearchEngine[] = [
   {
     name: 'Google',
-    icon: '🔍',
+    icon: '/icons/services/google2.png',
     url: 'https://www.google.com/search',
     searchParam: 'q',
   },
   {
     name: 'YouTube',
-    icon: '▶️',
+    icon: '/icons/services/youtube2.png',
     url: 'https://www.youtube.com/results',
     searchParam: 'search_query',
   },
   {
     name: 'TikTok',
-    icon: '🎵',
+    icon: '/icons/services/tiktok2.png',
     url: 'https://www.tiktok.com/search',
     searchParam: 'q',
   },
   {
+    name: 'Facebook',
+    icon: '/icons/services/facebook2.png',
+    url: 'https://www.facebook.com/search/top',
+    searchParam: 'q',
+  },
+  {
+    name: 'X',
+    icon: '/icons/services/x2.png',
+    url: 'https://x.com/search',
+    searchParam: 'q',
+  },
+  {
     name: 'Bing',
-    icon: '🅱️',
+    icon: '/icons/services/bing.svg',
     url: 'https://www.bing.com/search',
     searchParam: 'q',
   },
   {
     name: 'DuckDuckGo',
-    icon: '🦆',
+    icon: '/icons/services/duckduckgo.png',
     url: 'https://duckduckgo.com/',
     searchParam: 'q',
   },
   {
     name: 'Qwant',
-    icon: '🔎',
+    icon: '/icons/services/qwant2.png',
     url: 'https://www.qwant.com/',
     searchParam: 'q',
   },
@@ -201,7 +214,13 @@ export function SearchPromptButton({
                     borderColor: 'var(--color-border-light)',
                   }}
                 >
-                  <span className="text-2xl">{engine.icon}</span>
+                  <Image
+                    src={engine.icon}
+                    alt={engine.name}
+                    width={28}
+                    height={28}
+                    className="flex-shrink-0"
+                  />
                   <div className="flex-1 text-left">
                     <span
                       className="font-medium text-sm block"
