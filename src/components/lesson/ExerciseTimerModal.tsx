@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { ChevronDown, ChevronUp, CheckCircle, X } from 'lucide-react';
+import { ChevronDown, ChevronUp, CheckCircle } from 'lucide-react';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { Icon } from '@/components/icons';
@@ -36,13 +36,12 @@ export function ExerciseTimerModal({
   const [timeRemaining, setTimeRemaining] = useState(durationSeconds);
   const [isChecked, setIsChecked] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
-  const [showCorrections, setShowCorrections] = useState(false);
+  // Show corrections inline after clicking "Valider"
+  const [showCorrectionsInline, setShowCorrectionsInline] = useState(false);
 
   const timerComplete = timeRemaining <= 0;
   // Admin mode allows immediate validation
   const canValidate = isAdminMode || (timerComplete && isChecked);
-  // Can view corrections only after checking the completion box
-  const canViewCorrections = isAdminMode || (timerComplete && isChecked);
 
   // Parse exercise content to separate corrections
   const { exerciseContent, correctionContent, hasCorrections } = useMemo(() => {
@@ -55,7 +54,7 @@ export function ExerciseTimerModal({
       setTimeRemaining(durationSeconds);
       setIsChecked(false);
       setIsExpanded(false);
-      setShowCorrections(false);
+      setShowCorrectionsInline(false);
     }
   }, [isOpen, durationSeconds]);
 
@@ -77,17 +76,19 @@ export function ExerciseTimerModal({
     }
   }, [timerComplete, isAdminMode]);
 
-  const handleValidate = useCallback(() => {
-    if (canValidate) {
+  // When clicking "Valider": if there are corrections, show them inline first
+  // Otherwise, directly validate
+  const handleValidateClick = useCallback(() => {
+    if (!canValidate) return;
+
+    if (hasCorrections && !showCorrectionsInline) {
+      // First click: show corrections inline
+      setShowCorrectionsInline(true);
+    } else {
+      // Second click (or no corrections): actually validate
       onValidate();
     }
-  }, [canValidate, onValidate]);
-
-  const handleViewCorrections = useCallback(() => {
-    if (canViewCorrections) {
-      setShowCorrections(true);
-    }
-  }, [canViewCorrections]);
+  }, [canValidate, hasCorrections, showCorrectionsInline, onValidate]);
 
   // Extract preview - show only first 3 non-empty lines as preview (from exercise content only)
   const { previewContent, fullContent, hasMore } = useMemo(() => {
@@ -138,21 +139,11 @@ export function ExerciseTimerModal({
       >
         Annuler
       </Button>
-      {hasCorrections && canViewCorrections && (
-        <Button
-          variant="outline"
-          onClick={handleViewCorrections}
-          disabled={isValidating}
-        >
-          <CheckCircle size={16} className="mr-2" />
-          Voir les corrections
-        </Button>
-      )}
       <Button
-        onClick={handleValidate}
+        onClick={handleValidateClick}
         disabled={!canValidate || isValidating}
       >
-        {isValidating ? 'Validation...' : 'Valider'}
+        {isValidating ? 'Validation...' : (showCorrectionsInline ? 'Terminer' : 'Valider')}
       </Button>
     </>
   );
@@ -316,72 +307,41 @@ export function ExerciseTimerModal({
             </span>
           </button>
 
-          {/* Info about corrections */}
-          {hasCorrections && !canViewCorrections && (
+          {/* Info about corrections (shown before validation) */}
+          {hasCorrections && !showCorrectionsInline && canValidate && (
             <p
               className="text-xs text-center"
               style={{ color: 'var(--color-subtext)' }}
             >
-              Les corrections seront disponibles après avoir coché la case ci-dessus.
+              Cliquez sur &quot;Valider&quot; pour voir les corrections.
             </p>
           )}
-        </div>
-      </Modal>
 
-      {/* Corrections Modal */}
-      {showCorrections && correctionContent && (
-        <div
-          className="fixed inset-0 z-[60] flex items-center justify-center p-4"
-          style={{ backgroundColor: 'rgba(0, 0, 0, 0.7)' }}
-          onClick={() => setShowCorrections(false)}
-        >
-          <div
-            className="relative w-full max-w-2xl max-h-[80vh] rounded-xl overflow-hidden"
-            style={{
-              backgroundColor: 'var(--color-bg-elevated)',
-              borderWidth: '1px',
-              borderColor: 'var(--color-border)',
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Header */}
+          {/* Corrections displayed inline after clicking "Valider" */}
+          {showCorrectionsInline && correctionContent && (
             <div
-              className="flex items-center justify-between px-6 py-4"
+              className="rounded-lg p-4"
               style={{
-                borderBottomWidth: '1px',
-                borderBottomColor: 'var(--color-border-light)',
-                backgroundColor: 'var(--color-surface-1)',
+                backgroundColor: 'color-mix(in srgb, var(--color-green) 10%, transparent)',
+                borderWidth: '1px',
+                borderStyle: 'solid',
+                borderColor: 'var(--color-green)',
               }}
             >
-              <h2
-                className="text-xl font-bold flex items-center gap-2"
-                style={{ color: 'var(--color-text)' }}
+              <h3
+                className="text-sm font-semibold mb-3 uppercase tracking-wide flex items-center gap-2"
+                style={{ color: 'var(--color-green)' }}
               >
-                <CheckCircle size={24} style={{ color: 'var(--color-green)' }} />
-                Corrections de l&apos;exercice
-              </h2>
-              <button
-                type="button"
-                onClick={() => setShowCorrections(false)}
-                className="p-2 rounded-lg hover:opacity-80 transition-opacity"
-                style={{ color: 'var(--color-subtext)' }}
-              >
-                <X size={24} />
-              </button>
-            </div>
-
-            {/* Content */}
-            <div
-              className="p-6 overflow-y-auto"
-              style={{ maxHeight: 'calc(80vh - 80px)' }}
-            >
+                <CheckCircle size={16} />
+                Corrections
+              </h3>
               <div className="prose max-w-none">
                 {renderMarkdownContent(correctionContent)}
               </div>
             </div>
-          </div>
+          )}
         </div>
-      )}
+      </Modal>
     </>
   );
 }
