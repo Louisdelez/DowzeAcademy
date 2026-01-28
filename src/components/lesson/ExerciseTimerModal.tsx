@@ -193,7 +193,7 @@ export function ExerciseTimerModal({
             </span>
           </div>
 
-          {/* Corrections content */}
+          {/* Full exercise content with corrections */}
           <div
             className="rounded-lg p-4"
             style={{
@@ -204,7 +204,7 @@ export function ExerciseTimerModal({
             }}
           >
             <div className="prose max-w-none">
-              {renderMarkdownContent(correctionContent)}
+              {renderMarkdownContent(exerciseSummary)}
             </div>
           </div>
         </div>
