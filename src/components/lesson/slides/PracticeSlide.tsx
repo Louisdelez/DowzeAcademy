@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Clipboard, CheckSquare, Square, Target, Settings, ListChecks, ArrowRight } from 'lucide-react';
 import type { PracticeSlide as PracticeSlideType, SlideDirection } from '@/types/slides';
 import { renderMarkdownContent } from '@/lib/utils/markdown-renderer';
+import { parseExerciseContent } from '@/lib/utils/exercise-content-parser';
 
 interface PracticeSlideProps {
   slide: PracticeSlideType;
@@ -40,6 +41,11 @@ export function PracticeSlide({
   const [checkedItems, setCheckedItems] = useState<boolean[]>(
     slide.checklist ? new Array(slide.checklist.length).fill(false) : []
   );
+
+  // Parse content to hide corrections (they are shown only in the ExerciseTimerModal popup)
+  const { exerciseContent } = useMemo(() => {
+    return parseExerciseContent(slide.content);
+  }, [slide.content]);
 
   const handleChecklistToggle = (index: number) => {
     const newChecked = [...checkedItems];
@@ -87,9 +93,9 @@ export function PracticeSlide({
           </div>
         </div>
 
-        {/* Slide content */}
+        {/* Slide content (without corrections - they are shown in ExerciseTimerModal popup) */}
         <div className="prose max-w-none mb-6">
-          {renderMarkdownContent(slide.content, { skipFirstHeading: true })}
+          {renderMarkdownContent(exerciseContent, { skipFirstHeading: true })}
         </div>
 
         {/* Checklist for evaluation slides */}
