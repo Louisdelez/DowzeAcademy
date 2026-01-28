@@ -22,13 +22,25 @@ import React from 'react';
  * - Inline formatting (**bold**, `code`)
  */
 
-// Render inline markdown (bold, code)
+// Render inline markdown (bold, italic, code)
 export function renderInlineMarkdown(text: string): React.ReactNode {
-  let processed = text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  let processed = text;
+
+  // Bold: **text** or __text__
+  processed = processed.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  processed = processed.replace(/__(.+?)__/g, '<strong>$1</strong>');
+
+  // Italic: *text* or _text_ (single asterisk/underscore)
+  // Use negative lookbehind/lookahead to avoid matching inside words
+  processed = processed.replace(/(?<![*\w])\*([^*]+)\*(?![*\w])/g, '<em>$1</em>');
+  processed = processed.replace(/(?<![_\w])_([^_]+)_(?![_\w])/g, '<em>$1</em>');
+
+  // Inline code: `text`
   processed = processed.replace(
     /`(.+?)`/g,
     '<code style="background-color: var(--color-bg-tertiary); padding: 0 0.25rem; border-radius: 0.25rem; font-size: 0.875rem;">$1</code>'
   );
+
   return <span dangerouslySetInnerHTML={{ __html: processed }} />;
 }
 
