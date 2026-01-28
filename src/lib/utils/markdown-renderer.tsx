@@ -26,14 +26,12 @@ import React from 'react';
 export function renderInlineMarkdown(text: string): React.ReactNode {
   let processed = text;
 
-  // Bold: **text** or __text__
+  // Bold: **text** - only with asterisks (not underscores, to preserve ________ blanks)
   processed = processed.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-  processed = processed.replace(/__(.+?)__/g, '<strong>$1</strong>');
 
-  // Italic: *text* or _text_ (single asterisk/underscore)
-  // Use negative lookbehind/lookahead to avoid matching inside words
-  processed = processed.replace(/(?<![*\w])\*([^*]+)\*(?![*\w])/g, '<em>$1</em>');
-  processed = processed.replace(/(?<![_\w])_([^_]+)_(?![_\w])/g, '<em>$1</em>');
+  // Italic: *text* (single asterisk only, not underscore to preserve ________ blanks)
+  // Match *text* where text contains at least one letter/number (not just spaces/punctuation)
+  processed = processed.replace(/(?<![*\w])\*([^*]*[a-zA-ZÀ-ÿ0-9][^*]*)\*(?![*\w])/g, '<em>$1</em>');
 
   // Inline code: `text`
   processed = processed.replace(
