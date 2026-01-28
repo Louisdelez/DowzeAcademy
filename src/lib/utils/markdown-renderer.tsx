@@ -29,9 +29,9 @@ export function renderInlineMarkdown(text: string): React.ReactNode {
   // Bold: **text** - only with asterisks (not underscores, to preserve ________ blanks)
   processed = processed.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
 
-  // Italic: *text* (single asterisk only, not underscore to preserve ________ blanks)
+  // Underline: *text* (single asterisk = underline, to highlight words to replace in exercises)
   // Match *text* where text contains at least one letter/number (not just spaces/punctuation)
-  processed = processed.replace(/(?<![*\w])\*([^*]*[a-zA-ZÀ-ÿ0-9][^*]*)\*(?![*\w])/g, '<em>$1</em>');
+  processed = processed.replace(/(?<![*\w])\*([^*]*[a-zA-ZÀ-ÿ0-9][^*]*)\*(?![*\w])/g, '<u>$1</u>');
 
   // Inline code: `text`
   processed = processed.replace(
