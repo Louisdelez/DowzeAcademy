@@ -3,6 +3,10 @@
  *
  * Separates exercise content from corrections for the practice flow.
  * Corrections are hidden until the exercise timer is complete.
+ *
+ * Supports two content structures:
+ * 1. Corrections at the end (simple): Exercise content, then all corrections
+ * 2. Interspersed corrections: Each exercise followed by its correction
  */
 
 interface ParsedExerciseContent {
@@ -44,7 +48,46 @@ const CORRECTION_KEYWORDS = [
 ];
 
 /**
+ * Keywords that indicate the start of a new exercise section.
+ * Used to detect when corrections end and new exercise begins.
+ */
+const EXERCISE_KEYWORDS = [
+  '## Exercice',
+  '### Exercice',
+  '**Exercice',
+  'Exercice ',
+];
+
+/**
+ * Check if a line starts a correction section
+ */
+function isCorrectionLine(line: string): boolean {
+  const trimmed = line.trim();
+  for (const keyword of CORRECTION_KEYWORDS) {
+    if (trimmed.startsWith(keyword) || trimmed === keyword.replace(' :', ':').replace(':', '')) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Check if a line starts a new exercise section
+ */
+function isExerciseLine(line: string): boolean {
+  const trimmed = line.trim();
+  for (const keyword of EXERCISE_KEYWORDS) {
+    if (trimmed.startsWith(keyword)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
  * Parse exercise content and separate corrections.
+ * Handles both interspersed corrections (correction after each exercise)
+ * and corrections at the end of the content.
  *
  * @param content - The full exercise content (markdown)
  * @returns Parsed content with exercise and corrections separated
@@ -59,44 +102,55 @@ export function parseExerciseContent(content: string): ParsedExerciseContent {
   }
 
   const lines = content.split('\n');
-  let correctionStartIndex = -1;
+  const exerciseLines: string[] = [];
+  const correctionLines: string[] = [];
 
-  // Find the first line that starts a correction section
+  let inCorrectionSection = false;
+
   for (let i = 0; i < lines.length; i++) {
-    const line = lines[i].trim();
+    const line = lines[i];
 
-    for (const keyword of CORRECTION_KEYWORDS) {
-      if (line.startsWith(keyword) || line === keyword.replace(' :', ':').replace(':', '')) {
-        correctionStartIndex = i;
-        break;
-      }
+    // Check if this line starts a new correction section
+    if (isCorrectionLine(line)) {
+      inCorrectionSection = true;
+      correctionLines.push(line);
+      continue;
     }
 
-    if (correctionStartIndex !== -1) break;
+    // Check if we're in a correction section but hit a new exercise
+    if (inCorrectionSection && isExerciseLine(line)) {
+      inCorrectionSection = false;
+      exerciseLines.push(line);
+      continue;
+    }
+
+    // Add line to appropriate section
+    if (inCorrectionSection) {
+      correctionLines.push(line);
+    } else {
+      exerciseLines.push(line);
+    }
   }
 
-  // If no correction section found, return original content
-  if (correctionStartIndex === -1) {
-    return {
-      exerciseContent: content,
-      correctionContent: null,
-      hasCorrections: false,
-    };
-  }
-
-  // Split content into exercise and correction parts
-  const exerciseLines = lines.slice(0, correctionStartIndex);
-  const correctionLines = lines.slice(correctionStartIndex);
-
-  // Remove trailing empty lines from exercise content
+  // Clean up trailing empty lines from exercise content
   while (exerciseLines.length > 0 && exerciseLines[exerciseLines.length - 1].trim() === '') {
     exerciseLines.pop();
   }
 
+  // Clean up leading/trailing empty lines from correction content
+  while (correctionLines.length > 0 && correctionLines[0].trim() === '') {
+    correctionLines.shift();
+  }
+  while (correctionLines.length > 0 && correctionLines[correctionLines.length - 1].trim() === '') {
+    correctionLines.pop();
+  }
+
+  const hasCorrections = correctionLines.length > 0;
+
   return {
     exerciseContent: exerciseLines.join('\n'),
-    correctionContent: correctionLines.join('\n'),
-    hasCorrections: true,
+    correctionContent: hasCorrections ? correctionLines.join('\n') : null,
+    hasCorrections,
   };
 }
 
