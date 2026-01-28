@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { Icon } from '@/components/icons';
+import { renderMarkdownContent } from '@/lib/utils/markdown-renderer';
 
 interface ExerciseTimerModalProps {
   isOpen: boolean;
@@ -13,95 +14,7 @@ interface ExerciseTimerModalProps {
   durationSeconds: number;
   exerciseSummary: string;
   isValidating?: boolean;
-}
-
-// Process inline markdown (bold, italic, code, links)
-function processInlineMarkdown(text: string): string {
-  let processed = text;
-  // Bold **text** or __text__
-  processed = processed.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-  processed = processed.replace(/__(.+?)__/g, '<strong>$1</strong>');
-  // Italic *text* or _text_ (but not inside words)
-  processed = processed.replace(/(?<!\w)\*([^*]+)\*(?!\w)/g, '<em>$1</em>');
-  processed = processed.replace(/(?<!\w)_([^_]+)_(?!\w)/g, '<em>$1</em>');
-  // Inline code `text`
-  processed = processed.replace(/`([^`]+)`/g, '<code style="background-color: var(--color-bg-tertiary); padding: 0.1em 0.3em; border-radius: 3px; font-size: 0.9em;">$1</code>');
-  return processed;
-}
-
-// Render markdown content properly
-function renderMarkdownContent(content: string) {
-  return content.split('\n').map((line, index) => {
-    // Skip empty lines at the start
-    if (index === 0 && line.trim() === '') return null;
-
-    // H2 headings (with or without space after ##)
-    if (line.startsWith('##') && !line.startsWith('###')) {
-      const text = line.replace(/^##\s*/, '');
-      return (
-        <h3
-          key={index}
-          className="text-base font-semibold mt-4 mb-2 first:mt-0"
-          style={{ color: 'var(--color-text)' }}
-          dangerouslySetInnerHTML={{ __html: processInlineMarkdown(text) }}
-        />
-      );
-    }
-
-    // H3 headings (with or without space after ###)
-    if (line.startsWith('###')) {
-      const text = line.replace(/^###\s*/, '');
-      return (
-        <h4
-          key={index}
-          className="text-sm font-semibold mt-3 mb-1"
-          style={{ color: 'var(--color-text)' }}
-          dangerouslySetInnerHTML={{ __html: processInlineMarkdown(text) }}
-        />
-      );
-    }
-
-    // Bullet lists (with * or - at start of line followed by space)
-    if (line.match(/^[\-\*]\s/)) {
-      const text = line.slice(2);
-      return (
-        <li
-          key={index}
-          className="ml-4 list-disc text-sm"
-          style={{ color: 'var(--color-text-secondary)' }}
-          dangerouslySetInnerHTML={{ __html: processInlineMarkdown(text) }}
-        />
-      );
-    }
-
-    // Numbered lists
-    if (/^\d+\.\s/.test(line)) {
-      const text = line.replace(/^\d+\.\s/, '');
-      return (
-        <li
-          key={index}
-          className="ml-4 list-decimal text-sm"
-          style={{ color: 'var(--color-text-secondary)' }}
-          dangerouslySetInnerHTML={{ __html: processInlineMarkdown(text) }}
-        />
-      );
-    }
-
-    // Empty lines
-    if (line.trim() === '') {
-      return <div key={index} className="h-2" />;
-    }
-
-    // Regular paragraphs
-    return (
-      <p
-        key={index}
-        className="text-sm leading-relaxed"
-        style={{ color: 'var(--color-text-secondary)' }}
-        dangerouslySetInnerHTML={{ __html: processInlineMarkdown(line) }}
-      />
-    );
-  });
+  isAdminMode?: boolean;
 }
 
 function formatTime(seconds: number): string {
@@ -117,13 +30,15 @@ export function ExerciseTimerModal({
   durationSeconds,
   exerciseSummary,
   isValidating = false,
+  isAdminMode = false,
 }: ExerciseTimerModalProps) {
   const [timeRemaining, setTimeRemaining] = useState(durationSeconds);
   const [isChecked, setIsChecked] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
 
   const timerComplete = timeRemaining <= 0;
-  const canValidate = timerComplete && isChecked;
+  // Admin mode allows immediate validation
+  const canValidate = isAdminMode || (timerComplete && isChecked);
 
   // Reset state when modal opens
   useEffect(() => {
@@ -146,10 +61,11 @@ export function ExerciseTimerModal({
   }, [isOpen, timeRemaining]);
 
   const handleCheckboxClick = useCallback(() => {
-    if (timerComplete) {
+    // Admin mode allows checking anytime
+    if (isAdminMode || timerComplete) {
       setIsChecked((prev) => !prev);
     }
-  }, [timerComplete]);
+  }, [timerComplete, isAdminMode]);
 
   const handleValidate = useCallback(() => {
     if (canValidate) {
