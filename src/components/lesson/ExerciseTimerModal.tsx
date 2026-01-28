@@ -40,9 +40,8 @@ export function ExerciseTimerModal({
   const [showCorrectionsModal, setShowCorrectionsModal] = useState(false);
 
   const timerComplete = timeRemaining <= 0;
-  // Validation requires timer to be complete AND checkbox checked
-  // Admin mode only allows skipping the timer for the final validation, not for viewing corrections
-  const canValidate = timerComplete && isChecked;
+  // Admin mode bypasses timer requirement
+  const canValidate = isAdminMode || (timerComplete && isChecked);
 
   // Parse exercise content to separate corrections
   const { exerciseContent, correctionContent, hasCorrections } = useMemo(() => {
@@ -71,11 +70,11 @@ export function ExerciseTimerModal({
   }, [isOpen, timeRemaining]);
 
   const handleCheckboxClick = useCallback(() => {
-    // Checkbox only available after timer completes
-    if (timerComplete) {
+    // Checkbox available after timer completes OR in admin mode
+    if (isAdminMode || timerComplete) {
       setIsChecked((prev) => !prev);
     }
-  }, [timerComplete]);
+  }, [timerComplete, isAdminMode]);
 
   // When clicking "Valider": if there are corrections, show them in a new modal
   // Otherwise, directly validate
@@ -325,15 +324,15 @@ export function ExerciseTimerModal({
             </p>
           </div>
 
-          {/* Completion Checkbox - only available after timer completes */}
+          {/* Completion Checkbox - available after timer completes OR in admin mode */}
           <button
             type="button"
             onClick={handleCheckboxClick}
-            disabled={!timerComplete}
+            disabled={!timerComplete && !isAdminMode}
             className={`
               w-full flex items-center gap-3 p-4 rounded-lg text-left
               transition-all duration-200
-              ${!timerComplete ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:opacity-90'}
+              ${(!timerComplete && !isAdminMode) ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:opacity-90'}
             `}
             style={{
               backgroundColor: isChecked
@@ -352,7 +351,7 @@ export function ExerciseTimerModal({
               style={{
                 borderColor: isChecked
                   ? 'var(--color-green)'
-                  : timerComplete
+                  : (timerComplete || isAdminMode)
                     ? 'var(--color-subtext)'
                     : 'var(--color-border)',
                 backgroundColor: isChecked ? 'var(--color-green)' : 'transparent',
