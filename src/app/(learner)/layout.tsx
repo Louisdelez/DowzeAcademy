@@ -3,6 +3,7 @@
 import { type ReactNode } from 'react';
 import { NetworkStatusBanner } from '@/components/connectivity/NetworkStatusBanner';
 import { BottomNav } from '@/components/navigation/BottomNav';
+import { AdminModeToggle } from '@/components/admin-mode/AdminModeToggle';
 
 interface LearnerLayoutProps {
   children: ReactNode;
@@ -39,6 +40,7 @@ export default function LearnerLayout({ children }: LearnerLayoutProps) {
       </header>
       <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24">{children}</main>
       <BottomNav />
+      <AdminModeToggle />
     </div>
   );
 }

@@ -3,6 +3,7 @@ import { cookies } from 'next/headers';
 import { type NextRequest } from 'next/server';
 
 const ADMIN_SESSION_COOKIE = 'admin_session';
+const ADMIN_GAME_MODE_COOKIE = 'admin_game_mode';
 const SESSION_DURATION = 8 * 60 * 60 * 1000; // 8 hours
 
 interface AdminSession {
@@ -114,4 +115,40 @@ export async function isAdminAuthenticated(request: NextRequest): Promise<boolea
  */
 export async function hashPassword(password: string): Promise<string> {
   return hash(password, 10);
+}
+
+/**
+ * Sets the admin game mode cookie
+ */
+export async function setGameModeCookie(enabled: boolean): Promise<void> {
+  const cookieStore = await cookies();
+
+  if (enabled) {
+    cookieStore.set(ADMIN_GAME_MODE_COOKIE, 'true', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: SESSION_DURATION / 1000,
+      path: '/',
+    });
+  } else {
+    cookieStore.delete(ADMIN_GAME_MODE_COOKIE);
+  }
+}
+
+/**
+ * Gets the admin game mode cookie value
+ */
+export async function getGameModeCookie(): Promise<boolean> {
+  const cookieStore = await cookies();
+  const cookie = cookieStore.get(ADMIN_GAME_MODE_COOKIE);
+  return cookie?.value === 'true';
+}
+
+/**
+ * Checks game mode from request cookies (for middleware/client)
+ */
+export function isGameModeEnabled(request: NextRequest): boolean {
+  const cookie = request.cookies.get(ADMIN_GAME_MODE_COOKIE);
+  return cookie?.value === 'true';
 }

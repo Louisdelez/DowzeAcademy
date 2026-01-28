@@ -8,9 +8,9 @@ const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
 // Domain IDs
-const DOMAIN_9CO_ID = 'cc420fbf-24e1-40b2-9b98-e4d6d7516112';
-const DOMAIN_10CO_ID = '0c9135c2-43c7-4537-bd25-0fcc7c3de912';
-const DOMAIN_11CO_ID = 'a7d2b3e0-ae0a-47a1-9889-4cefe83cb785';
+const DOMAIN_9CO_ID = 'beaeb82e-d547-48a5-9d0a-9f7f5ca66793';
+const DOMAIN_10CO_ID = 'bce458d0-f04b-4845-b5d3-8a0eb78d84d4';
+const DOMAIN_11CO_ID = 'fc8d1522-f1ec-42c7-be6a-c2d66f5e9a2a';
 
 interface Pack {
   name: string;

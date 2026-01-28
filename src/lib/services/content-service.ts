@@ -199,6 +199,15 @@ export async function getModuleWithLesson(moduleId: string) {
               linkedTheorySection: true,
               correctAnswer: true,
               feedback: true,
+              // Include choices for computing correctAnswer when using new model
+              choices: {
+                orderBy: { order: 'asc' },
+                select: {
+                  id: true,
+                  text: true,
+                  isCorrect: true,
+                },
+              },
             },
           },
         },

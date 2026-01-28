@@ -69,16 +69,31 @@ export default async function ModulePage({ params }: ModulePageProps) {
           shuffleQuestions: module.lesson.shuffleQuestions,
           shuffleAnswers: module.lesson.shuffleAnswers,
           questionsToShow: module.lesson.questionsToShow,
-          questions: module.lesson.questions.map((q) => ({
-            id: q.id,
-            questionText: q.questionText,
-            questionType: q.questionType,
-            options: q.options as { id: string; text: string }[] | null,
-            order: q.order,
-            linkedTheorySection: q.linkedTheorySection,
-            correctAnswer: q.correctAnswer as string,
-            explanation: q.feedback as string | null,
-          })),
+          questions: module.lesson.questions.map((q) => {
+            // Compute correctAnswer from choices if legacy field is empty
+            let correctAnswer = q.correctAnswer as string;
+            if (!correctAnswer && q.choices && q.choices.length > 0) {
+              // Use choices.isCorrect to determine the correct answer(s)
+              const correctChoices = q.choices.filter((c: { isCorrect: boolean }) => c.isCorrect);
+              if (q.questionType === 'MULTIPLE_CHOICE') {
+                // Multiple correct answers - return array of texts
+                correctAnswer = correctChoices.map((c: { text: string }) => c.text) as unknown as string;
+              } else {
+                // Single correct answer - return text
+                correctAnswer = correctChoices[0]?.text || '';
+              }
+            }
+            return {
+              id: q.id,
+              questionText: q.questionText,
+              questionType: q.questionType,
+              options: q.options as { id: string; text: string }[] | null,
+              order: q.order,
+              linkedTheorySection: q.linkedTheorySection,
+              correctAnswer,
+              explanation: q.feedback as string | null,
+            };
+          }),
         }}
         learningContext={{
           domainName: module.discipline.pack.domain.name,

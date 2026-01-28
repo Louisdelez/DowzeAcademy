@@ -8,7 +8,7 @@ const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
 // Pack ID for Français L1 9CO
-const PACK_ID = 'a3358a9d-3529-4d18-a1a7-8fd03407a600';
+const PACK_ID = '9cd06dc1-c3e3-4f11-8103-337dca40741f';
 
 interface QuizQuestion {
   question: string;

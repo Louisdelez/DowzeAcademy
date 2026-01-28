@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { ModuleStatusBadge } from '@/components/progression/ModuleStatusBadge';
+import { useAdminMode } from '@/lib/hooks/useAdminMode';
 import type { Module, ModuleProgressStatus } from '@/types/models';
 
 interface ModuleCardProps {
@@ -11,7 +12,9 @@ interface ModuleCardProps {
 }
 
 export function ModuleCard({ module, status, disabled }: ModuleCardProps) {
-  const isLocked = status === 'LOCKED';
+  const { isGameModeEnabled } = useAdminMode();
+  // Admin mode bypasses lock
+  const isLocked = status === 'LOCKED' && !isGameModeEnabled;
   const content = (
     <div
       className={`rounded-xl p-4 transition-all shadow-sm ${

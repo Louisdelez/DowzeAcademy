@@ -4,6 +4,7 @@ import { useMemo, useCallback, useState, useEffect } from 'react';
 import { useSlideNavigation } from '@/lib/hooks/useSlideNavigation';
 import { useKeyboardNavigation } from '@/lib/hooks/useKeyboardNavigation';
 import { useSwipeNavigation } from '@/lib/hooks/useSwipeNavigation';
+import { useAdminMode } from '@/lib/hooks/useAdminMode';
 import { parseTheorySlides } from '@/lib/utils/theory-parser';
 import { SlideProgress } from './SlideProgress';
 import { SlideNavigation } from './SlideNavigation';
@@ -148,6 +149,12 @@ export function SlideContainer({
   const [isCompletingPractice, setIsCompletingPractice] = useState(false);
   const [practiceExerciseCompleted, setPracticeExerciseCompleted] = useState(false);
 
+  // Admin mode
+  const { isGameModeEnabled } = useAdminMode();
+
+  // Feature 005: Track whether we're using attempt-based quiz flow
+  const useAttemptBasedQuiz = lesson.shuffleQuestions !== false || lesson.shuffleAnswers !== false;
+
   // Initialize navigation hook
   const {
     state,
@@ -184,10 +191,10 @@ export function SlideContainer({
     practiceSlides,
     initialState: initialProgress,
     quizThreshold,
+    isAdminMode: isGameModeEnabled,
+    useAttemptBasedQuiz,
   });
 
-  // Feature 005: Track whether we're using attempt-based quiz flow
-  const useAttemptBasedQuiz = lesson.shuffleQuestions !== false || lesson.shuffleAnswers !== false;
   const [attemptInitialized, setAttemptInitialized] = useState(false);
 
   // Feature 005: Initialize quiz attempt when entering quiz phase
@@ -461,6 +468,7 @@ export function SlideContainer({
             durationSeconds={lesson.practiceTimerDuration || 300}
             exerciseSummary={lesson.practiceInstructions || ''}
             isValidating={isCompletingPractice}
+            isAdminMode={isGameModeEnabled}
           />
         </>
       );

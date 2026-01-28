@@ -24,6 +24,8 @@ interface UseSlideNavigationOptions {
   practiceSlides: PracticeSlide[];
   initialState?: SlideState | null;
   quizThreshold: number;
+  isAdminMode?: boolean;
+  useAttemptBasedQuiz?: boolean;
 }
 
 interface UseSlideNavigationReturn {
@@ -67,6 +69,9 @@ interface UseSlideNavigationReturn {
   submitQuizAttempt: () => Promise<QuizResultResponse | null>;
   // Feature 005: Server-side isCorrect values per questionId
   serverIsCorrect: Record<string, boolean>;
+
+  // Admin mode
+  isAdminMode: boolean;
 }
 
 // ============================================
@@ -449,6 +454,8 @@ export function useSlideNavigation({
   practiceSlides,
   initialState,
   quizThreshold,
+  isAdminMode = false,
+  useAttemptBasedQuiz = false,
 }: UseSlideNavigationOptions): UseSlideNavigationReturn {
   const context: ReducerContext = useMemo(
     () => ({
@@ -492,11 +499,104 @@ export function useSlideNavigation({
 
   // Navigation actions
   const goNext = useCallback(async () => {
+    // Admin mode: auto-select the correct answer on quiz questions (without submitting yet)
+    if (isAdminMode && state.phase === 'quiz' && !state.showFeedback) {
+      // Check if quiz attempt data is expected but not ready yet
+      // This prevents setting text-based answers before the UI switches to optionId-based mode
+      if (isAttemptLoading) {
+        // Attempt data is loading - do nothing, user can press again when ready
+        return;
+      }
+
+      // If we expect attempt-based quiz but data isn't loaded yet, wait
+      if (useAttemptBasedQuiz && attemptQuestions.length === 0 && quizQuestions.length > 0) {
+        // Attempt data expected but not loaded yet - do nothing, user can press again when ready
+        return;
+      }
+
+      const currentAttemptQ = attemptQuestions[state.quizIndex];
+
+      // When using attempt-based quiz (shuffled questions), use the attemptQuestion's questionId
+      // to find the correct answer from the original quizQuestions array
+      const questionId = currentAttemptQ?.questionId || quizQuestions[state.quizIndex]?.questionId;
+
+      // Find the original question data which contains the correct answer
+      const originalQuestion = quizQuestions.find(q => q.questionId === questionId) || quizQuestions[state.quizIndex];
+
+      if (originalQuestion && questionId) {
+        const hasAnswer = state.quizAnswers[questionId] !== undefined;
+
+        if (!hasAnswer) {
+          // Step 1: Auto-select the correct answer (visual selection only, no submit)
+          let autoAnswer: string | string[];
+          const correctAnswerValue = originalQuestion.correctAnswer;
+
+          if (originalQuestion.questionType === 'SHORT_TEXT') {
+            // For text questions, use the correct answer directly
+            autoAnswer = correctAnswerValue as string;
+          } else if (currentAttemptQ?.choices && currentAttemptQ.choices.length > 0) {
+            // For choice questions with randomized choices, find the optionId matching the correct answer
+            // Normalize strings for comparison (trim whitespace, normalize case)
+            const normalize = (s: string) => s.trim().toLowerCase();
+
+            if (originalQuestion.questionType === 'MULTIPLE_CHOICE' && Array.isArray(correctAnswerValue)) {
+              // Multiple correct answers - find all matching optionIds
+              autoAnswer = correctAnswerValue.map(correctText => {
+                const normalizedCorrect = normalize(correctText);
+                const matchingChoice = currentAttemptQ.choices?.find(c => normalize(c.text) === normalizedCorrect);
+                return matchingChoice?.optionId || '';
+              }).filter(id => id !== '');
+            } else {
+              // Single correct answer - find matching optionId
+              const normalizedCorrect = normalize(String(correctAnswerValue));
+              const matchingChoice = currentAttemptQ.choices.find(c => normalize(c.text) === normalizedCorrect);
+              if (matchingChoice) {
+                autoAnswer = matchingChoice.optionId;
+              } else {
+                // Fallback: use the correct answer text directly (legacy compatibility)
+                autoAnswer = correctAnswerValue;
+              }
+            }
+          } else if (originalQuestion.options && originalQuestion.options.length > 0) {
+            // Legacy mode without randomized choices - use the correct answer directly
+            autoAnswer = correctAnswerValue;
+          } else {
+            autoAnswer = correctAnswerValue;
+          }
+
+          // Only set the answer visually - don't submit yet
+          // User will press arrow again to submit
+          dispatch({ type: 'SET_ANSWER', payload: { questionId, answer: autoAnswer } });
+          // Pre-mark as correct so feedback will show green when submitted
+          setServerIsCorrect((prev) => ({
+            ...prev,
+            [questionId]: true,
+          }));
+          return;
+        } else {
+          // Step 2: Answer is already selected, now submit to show feedback
+          dispatch({ type: 'SUBMIT_ANSWER' });
+          return;
+        }
+      }
+    }
+
     if (state.showFeedback) {
       // Check if we're on the last question and about to show results
-      const isLastQuestion = state.quizIndex >= quizQuestions.length - 1;
+      // Feature 005: Use attemptQuestions.length when available (respects questionsToShow)
+      const effectiveQuizLength = attemptQuestions.length > 0 ? attemptQuestions.length : quizQuestions.length;
+      const isLastQuestion = state.quizIndex >= effectiveQuizLength - 1;
 
       if (state.phase === 'quiz' && isLastQuestion) {
+        // Admin mode: skip server submission and mark as passed
+        if (isAdminMode) {
+          dispatch({
+            type: 'COMPLETE_QUIZ',
+            payload: { score: 100, passed: true, wrongQuestionIds: [] }
+          });
+          return;
+        }
+
         // Submit the attempt to get the server-calculated score
         if (attemptId) {
           try {
@@ -532,7 +632,7 @@ export function useSlideNavigation({
     } else {
       dispatch({ type: 'GO_NEXT' });
     }
-  }, [state.showFeedback, state.phase, state.quizIndex, quizQuestions.length, attemptId]);
+  }, [state.showFeedback, state.phase, state.quizIndex, state.quizAnswers, quizQuestions, attemptQuestions.length, attemptId, isAdminMode, isAttemptLoading, useAttemptBasedQuiz]);
 
   const goPrevious = useCallback(() => {
     dispatch({ type: 'GO_PREVIOUS' });
@@ -564,6 +664,9 @@ export function useSlideNavigation({
 
   // Can navigate?
   const canGoNext = useMemo(() => {
+    // Admin mode bypasses all restrictions
+    if (isAdminMode) return state.phase !== 'complete';
+
     if (state.phase === 'complete') return false;
     if (state.showFeedback) return true; // Can dismiss feedback
 
@@ -574,13 +677,16 @@ export function useSlideNavigation({
     }
 
     return true;
-  }, [state.phase, state.showFeedback, state.quizIndex, state.quizAnswers, quizQuestions]);
+  }, [state.phase, state.showFeedback, state.quizIndex, state.quizAnswers, quizQuestions, isAdminMode]);
 
   const canGoPrevious = useMemo(() => {
+    // Admin mode allows going back from anywhere
+    if (isAdminMode) return state.phase !== 'theory' || state.theoryIndex > 0;
+
     if (state.phase === 'theory' && state.theoryIndex === 0) return false;
     if (state.phase === 'complete') return false;
     return true;
-  }, [state.phase, state.theoryIndex]);
+  }, [state.phase, state.theoryIndex, isAdminMode]);
 
   // Wrong questions for retry suggestions
   const wrongQuestions = useMemo(() => {
@@ -823,5 +929,8 @@ export function useSlideNavigation({
     initializeQuizAttempt,
     submitQuizAttempt,
     serverIsCorrect,
+
+    // Admin mode
+    isAdminMode,
   };
 }

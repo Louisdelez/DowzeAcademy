@@ -64,13 +64,13 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       });
     }
 
-    // Check for existing in-progress attempt
+    // Abandon any existing in-progress attempt to allow fresh randomization
     const existingAttempt = await getInProgressAttempt(session.user.id, lessonId);
     if (existingAttempt) {
-      return NextResponse.json(
-        { error: 'An in-progress attempt already exists', attemptId: existingAttempt.id },
-        { status: 409 }
-      );
+      await prisma.quizAttempt.update({
+        where: { id: existingAttempt.id },
+        data: { status: 'ABANDONED' },
+      });
     }
 
     // Create new attempt with randomization

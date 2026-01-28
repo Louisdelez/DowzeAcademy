@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
+import { cookies } from 'next/headers';
 import { authOptions } from '@/lib/auth/learner-auth';
 import { markTheoryViewed } from '@/lib/services/progression-service';
+import { validateAdminSession, getGameModeCookie } from '@/lib/auth/admin-auth';
 
 interface RouteParams {
   params: Promise<{ moduleId: string }>;
@@ -17,7 +19,11 @@ export async function POST(request: Request, { params }: RouteParams) {
 
     const { moduleId } = await params;
 
-    const progression = await markTheoryViewed(session.user.id, moduleId);
+    // Check if admin game mode is enabled to bypass lock
+    const adminSession = await validateAdminSession();
+    const isAdminGameMode = !!(adminSession && await getGameModeCookie());
+
+    const progression = await markTheoryViewed(session.user.id, moduleId, isAdminGameMode);
 
     if (!progression) {
       return NextResponse.json(
