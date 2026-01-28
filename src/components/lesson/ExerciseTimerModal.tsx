@@ -36,8 +36,8 @@ export function ExerciseTimerModal({
   const [timeRemaining, setTimeRemaining] = useState(durationSeconds);
   const [isChecked, setIsChecked] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
-  // Show corrections inline after clicking "Valider"
-  const [showCorrectionsInline, setShowCorrectionsInline] = useState(false);
+  // Step 2: Show corrections in a separate modal
+  const [showCorrectionsModal, setShowCorrectionsModal] = useState(false);
 
   const timerComplete = timeRemaining <= 0;
   // Admin mode allows immediate validation
@@ -54,7 +54,7 @@ export function ExerciseTimerModal({
       setTimeRemaining(durationSeconds);
       setIsChecked(false);
       setIsExpanded(false);
-      setShowCorrectionsInline(false);
+      setShowCorrectionsModal(false);
     }
   }, [isOpen, durationSeconds]);
 
@@ -76,19 +76,24 @@ export function ExerciseTimerModal({
     }
   }, [timerComplete, isAdminMode]);
 
-  // When clicking "Valider": if there are corrections, show them inline first
+  // When clicking "Valider": if there are corrections, show them in a new modal
   // Otherwise, directly validate
   const handleValidateClick = useCallback(() => {
     if (!canValidate) return;
 
-    if (hasCorrections && !showCorrectionsInline) {
-      // First click: show corrections inline
-      setShowCorrectionsInline(true);
+    if (hasCorrections) {
+      // Show corrections modal (replaces the timer modal)
+      setShowCorrectionsModal(true);
     } else {
-      // Second click (or no corrections): actually validate
+      // No corrections: directly validate
       onValidate();
     }
-  }, [canValidate, hasCorrections, showCorrectionsInline, onValidate]);
+  }, [canValidate, hasCorrections, onValidate]);
+
+  // Handle "Terminer" click in corrections modal
+  const handleFinish = useCallback(() => {
+    onValidate();
+  }, [onValidate]);
 
   // Extract preview - show only first 3 non-empty lines as preview (from exercise content only)
   const { previewContent, fullContent, hasMore } = useMemo(() => {
@@ -143,10 +148,69 @@ export function ExerciseTimerModal({
         onClick={handleValidateClick}
         disabled={!canValidate || isValidating}
       >
-        {isValidating ? 'Validation...' : (showCorrectionsInline ? 'Terminer' : 'Valider')}
+        {isValidating ? 'Validation...' : 'Valider'}
       </Button>
     </>
   );
+
+  const correctionsFooterContent = (
+    <>
+      <Button
+        onClick={handleFinish}
+        disabled={isValidating}
+      >
+        {isValidating ? 'Validation...' : 'Terminer'}
+      </Button>
+    </>
+  );
+
+  // Show corrections modal instead of timer modal when corrections step is active
+  if (showCorrectionsModal && correctionContent) {
+    return (
+      <Modal
+        isOpen={isOpen}
+        onClose={onClose}
+        title="Corrections de l'exercice"
+        size="lg"
+        closeOnOverlayClick={false}
+        closeOnEscape={false}
+        footer={correctionsFooterContent}
+      >
+        <div className="space-y-4">
+          {/* Success message */}
+          <div
+            className="flex items-center gap-3 p-4 rounded-lg"
+            style={{
+              backgroundColor: 'color-mix(in srgb, var(--color-green) 10%, transparent)',
+              borderWidth: '1px',
+              borderStyle: 'solid',
+              borderColor: 'var(--color-green)',
+            }}
+          >
+            <CheckCircle size={24} style={{ color: 'var(--color-green)' }} />
+            <span className="font-medium" style={{ color: 'var(--color-green)' }}>
+              Exercice terminé ! Voici les corrections.
+            </span>
+          </div>
+
+          {/* Corrections content */}
+          <div
+            className="rounded-lg p-4"
+            style={{
+              backgroundColor: 'var(--color-bg-tertiary)',
+              borderWidth: '1px',
+              borderStyle: 'solid',
+              borderColor: 'var(--color-border-light)',
+            }}
+          >
+            <div className="prose max-w-none">
+              {renderMarkdownContent(correctionContent)}
+            </div>
+          </div>
+        </div>
+      </Modal>
+    );
+  }
 
   return (
     <>
@@ -307,38 +371,14 @@ export function ExerciseTimerModal({
             </span>
           </button>
 
-          {/* Info about corrections (shown before validation) */}
-          {hasCorrections && !showCorrectionsInline && canValidate && (
+          {/* Info about corrections (shown when can validate) */}
+          {hasCorrections && canValidate && (
             <p
               className="text-xs text-center"
               style={{ color: 'var(--color-subtext)' }}
             >
               Cliquez sur &quot;Valider&quot; pour voir les corrections.
             </p>
-          )}
-
-          {/* Corrections displayed inline after clicking "Valider" */}
-          {showCorrectionsInline && correctionContent && (
-            <div
-              className="rounded-lg p-4"
-              style={{
-                backgroundColor: 'color-mix(in srgb, var(--color-green) 10%, transparent)',
-                borderWidth: '1px',
-                borderStyle: 'solid',
-                borderColor: 'var(--color-green)',
-              }}
-            >
-              <h3
-                className="text-sm font-semibold mb-3 uppercase tracking-wide flex items-center gap-2"
-                style={{ color: 'var(--color-green)' }}
-              >
-                <CheckCircle size={16} />
-                Corrections
-              </h3>
-              <div className="prose max-w-none">
-                {renderMarkdownContent(correctionContent)}
-              </div>
-            </div>
           )}
         </div>
       </Modal>
