@@ -110,8 +110,8 @@ export default function AdminDisciplinesPage() {
     <div>
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Disciplines</h1>
-          <p className="text-gray-600 mt-1">Gérez les matières d&apos;apprentissage</p>
+          <h1 className="text-3xl font-bold" style={{ color: 'var(--color-text)' }}>Disciplines</h1>
+          <p className="mt-1" style={{ color: 'var(--color-text-secondary)' }}>Gérez les matières d&apos;apprentissage</p>
         </div>
         <Link href="/admin/disciplines?action=create">
           <Button>Créer une discipline</Button>
@@ -121,38 +121,38 @@ export default function AdminDisciplinesPage() {
       {isLoading ? (
         <div className="space-y-4">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-20 bg-gray-200 rounded-lg animate-pulse" />
+            <div key={i} className="h-20 rounded-lg animate-pulse" style={{ backgroundColor: 'var(--color-bg-tertiary)' }} />
           ))}
         </div>
       ) : disciplines.length === 0 ? (
-        <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
-          <p className="text-gray-500">Aucune discipline créée</p>
-          <Link href="/admin/disciplines?action=create" className="text-blue-600 hover:underline mt-2 inline-block">
+        <div className="text-center py-12 rounded-lg" style={{ backgroundColor: 'var(--color-bg-elevated)', border: '1px solid var(--color-border)' }}>
+          <p style={{ color: 'var(--color-text-muted)' }}>Aucune discipline créée</p>
+          <Link href="/admin/disciplines?action=create" className="hover:underline mt-2 inline-block" style={{ color: 'var(--color-primary)' }}>
             Créer votre première discipline
           </Link>
         </div>
       ) : (
-        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+        <div className="rounded-lg overflow-hidden" style={{ backgroundColor: 'var(--color-bg-elevated)', border: '1px solid var(--color-border)' }}>
           <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200">
+            <thead style={{ backgroundColor: 'var(--color-bg-secondary)', borderBottom: '1px solid var(--color-border)' }}>
               <tr>
-                <th className="px-6 py-3 text-left text-sm font-medium text-gray-500">Discipline</th>
-                <th className="px-6 py-3 text-left text-sm font-medium text-gray-500">Hiérarchie</th>
-                <th className="px-6 py-3 text-left text-sm font-medium text-gray-500">Statut</th>
-                <th className="px-6 py-3 text-left text-sm font-medium text-gray-500">Modules</th>
-                <th className="px-6 py-3 text-right text-sm font-medium text-gray-500">Actions</th>
+                <th className="px-6 py-3 text-left text-sm font-medium" style={{ color: 'var(--color-text-muted)' }}>Discipline</th>
+                <th className="px-6 py-3 text-left text-sm font-medium" style={{ color: 'var(--color-text-muted)' }}>Hiérarchie</th>
+                <th className="px-6 py-3 text-left text-sm font-medium" style={{ color: 'var(--color-text-muted)' }}>Statut</th>
+                <th className="px-6 py-3 text-left text-sm font-medium" style={{ color: 'var(--color-text-muted)' }}>Modules</th>
+                <th className="px-6 py-3 text-right text-sm font-medium" style={{ color: 'var(--color-text-muted)' }}>Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
-              {disciplines.map((discipline) => (
-                <tr key={discipline.id} className="hover:bg-gray-50">
+            <tbody>
+              {disciplines.map((discipline, index) => (
+                <tr key={discipline.id} className="themed-hover-row" style={index < disciplines.length - 1 ? { borderBottom: '1px solid var(--color-border)' } : undefined}>
                   <td className="px-6 py-4">
-                    <p className="font-medium text-gray-900">{discipline.name}</p>
+                    <p className="font-medium" style={{ color: 'var(--color-text)' }}>{discipline.name}</p>
                     {discipline.description && (
-                      <p className="text-sm text-gray-500 truncate max-w-xs">{discipline.description}</p>
+                      <p className="text-sm truncate max-w-xs" style={{ color: 'var(--color-text-muted)' }}>{discipline.description}</p>
                     )}
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-600">
+                  <td className="px-6 py-4 text-sm" style={{ color: 'var(--color-text-secondary)' }}>
                     {discipline.pack.domain.name} &gt; {discipline.pack.name}
                   </td>
                   <td className="px-6 py-4">
@@ -160,7 +160,7 @@ export default function AdminDisciplinesPage() {
                       {discipline.status === 'PUBLISHED' ? 'Publié' : 'Brouillon'}
                     </Badge>
                   </td>
-                  <td className="px-6 py-4 text-gray-600">{discipline._count.modules}</td>
+                  <td className="px-6 py-4" style={{ color: 'var(--color-text-secondary)' }}>{discipline._count.modules}</td>
                   <td className="px-6 py-4">
                     <div className="flex justify-end gap-2">
                       <Link href={`/admin/disciplines/${discipline.id}`}>
@@ -170,7 +170,8 @@ export default function AdminDisciplinesPage() {
                         variant="ghost"
                         size="sm"
                         onClick={() => handleDelete(discipline.id)}
-                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        className="themed-hover-error"
+                        style={{ color: 'var(--color-error)' }}
                       >
                         Supprimer
                       </Button>

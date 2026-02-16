@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { Settings } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
@@ -42,14 +43,16 @@ export default function AdminLoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
+    <div className="min-h-screen flex items-center justify-center px-4" style={{ backgroundColor: 'var(--color-bg)' }}>
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <div className="text-4xl mb-2">⚙️</div>
+          <div className="mb-2 flex justify-center">
+            <Settings className="w-10 h-10" style={{ color: 'var(--color-text-muted)' }} />
+          </div>
           <CardTitle as="h1" className="text-2xl">
             Administration
           </CardTitle>
-          <p className="text-gray-500 text-sm mt-2">
+          <p className="text-sm mt-2" style={{ color: 'var(--color-text-muted)' }}>
             Connectez-vous pour accéder au panneau d&apos;administration
           </p>
         </CardHeader>
@@ -75,8 +78,8 @@ export default function AdminLoginPage() {
             />
 
             {error && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                <p className="text-red-700 text-sm">{error}</p>
+              <div className="rounded-lg p-3" style={{ backgroundColor: 'color-mix(in srgb, var(--color-error) 15%, transparent)', border: '1px solid var(--color-error)' }}>
+                <p className="text-sm" style={{ color: 'var(--color-error)' }}>{error}</p>
               </div>
             )}
 

@@ -112,7 +112,7 @@ export default function DomainEditPage({ params }: { params: Promise<{ id: strin
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2" style={{ borderColor: 'var(--color-primary)' }} />
       </div>
     );
   }
@@ -120,7 +120,7 @@ export default function DomainEditPage({ params }: { params: Promise<{ id: strin
   if (error && !domain) {
     return (
       <div className="text-center py-12">
-        <p className="text-red-600">{error}</p>
+        <p style={{ color: 'var(--color-error)' }}>{error}</p>
         <Button onClick={() => router.push('/admin/domains')} className="mt-4">
           Retour aux domaines
         </Button>
@@ -131,8 +131,8 @@ export default function DomainEditPage({ params }: { params: Promise<{ id: strin
   return (
     <div className="max-w-2xl">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Modifier le domaine</h1>
-        <p className="text-gray-600 mt-1">{domain?.name}</p>
+        <h1 className="text-3xl font-bold" style={{ color: 'var(--color-text)' }}>Modifier le domaine</h1>
+        <p className="mt-1" style={{ color: 'var(--color-text-secondary)' }}>{domain?.name}</p>
       </div>
 
       {isStale && (
@@ -155,12 +155,13 @@ export default function DomainEditPage({ params }: { params: Promise<{ id: strin
           />
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+            <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-text-secondary)' }}>Description</label>
             <textarea
               value={formData.description}
               onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))}
               rows={4}
-              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full rounded-lg px-4 py-2 themed-focus"
+              style={{ border: '1px solid var(--color-border)', backgroundColor: 'var(--color-bg)', color: 'var(--color-text)' }}
             />
           </div>
 
@@ -171,8 +172,8 @@ export default function DomainEditPage({ params }: { params: Promise<{ id: strin
           />
 
           {error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-              <p className="text-red-700 text-sm">{error}</p>
+            <div className="rounded-lg p-3" style={{ backgroundColor: 'color-mix(in srgb, var(--color-error) 15%, transparent)', border: '1px solid var(--color-error)' }}>
+              <p className="text-sm" style={{ color: 'var(--color-error)' }}>{error}</p>
             </div>
           )}
 

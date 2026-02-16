@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { Home, Package, BookOpen, FileText, Plus, Eye, type LucideIcon } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 
 interface Stats {
@@ -44,45 +45,45 @@ export default function AdminDashboard() {
     fetchStats();
   }, []);
 
-  const statCards = [
+  const statCards: { title: string; value: number | string; subtitle?: string; href: string; icon: LucideIcon }[] = [
     {
       title: 'Domaines',
       value: stats?.domains.total ?? '-',
       subtitle: `${stats?.domains.published ?? 0} publiés`,
       href: '/admin/domains',
-      icon: '🏠',
+      icon: Home,
     },
     {
       title: 'Packs',
       value: stats?.packs.total ?? '-',
       href: '/admin/packs',
-      icon: '📦',
+      icon: Package,
     },
     {
       title: 'Disciplines',
       value: stats?.disciplines.total ?? '-',
       href: '/admin/disciplines',
-      icon: '📚',
+      icon: BookOpen,
     },
     {
       title: 'Modules',
       value: stats?.modules.total ?? '-',
       href: '/admin/modules',
-      icon: '📝',
+      icon: FileText,
     },
   ];
 
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-        <p className="text-gray-600 mt-1">Vue d&apos;ensemble du contenu éducatif</p>
+        <h1 className="text-3xl font-bold" style={{ color: 'var(--color-text)' }}>Dashboard</h1>
+        <p className="mt-1" style={{ color: 'var(--color-text-secondary)' }}>Vue d&apos;ensemble du contenu éducatif</p>
       </div>
 
       {isLoading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="h-32 bg-gray-200 rounded-xl animate-pulse" />
+            <div key={i} className="h-32 rounded-xl animate-pulse" style={{ backgroundColor: 'var(--color-bg-tertiary)' }} />
           ))}
         </div>
       ) : (
@@ -93,13 +94,13 @@ export default function AdminDashboard() {
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-lg">{card.title}</CardTitle>
-                    <span className="text-2xl">{card.icon}</span>
+                    <card.icon className="w-6 h-6" style={{ color: 'var(--color-text-muted)' }} />
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-3xl font-bold text-gray-900">{card.value}</p>
+                  <p className="text-3xl font-bold" style={{ color: 'var(--color-text)' }}>{card.value}</p>
                   {card.subtitle && (
-                    <p className="text-sm text-gray-500 mt-1">{card.subtitle}</p>
+                    <p className="text-sm mt-1" style={{ color: 'var(--color-text-muted)' }}>{card.subtitle}</p>
                   )}
                 </CardContent>
               </Card>
@@ -109,29 +110,32 @@ export default function AdminDashboard() {
       )}
 
       <div className="mt-12">
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">Actions rapides</h2>
+        <h2 className="text-xl font-semibold mb-4" style={{ color: 'var(--color-text)' }}>Actions rapides</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <Link
             href="/admin/domains?action=create"
-            className="flex items-center gap-3 p-4 bg-white rounded-lg border border-gray-200 hover:border-blue-300 hover:shadow-md transition-all"
+            className="flex items-center gap-3 p-4 rounded-lg transition-all themed-hover-card hover:shadow-md"
+            style={{ backgroundColor: 'var(--color-bg-elevated)', border: '1px solid var(--color-border)' }}
           >
-            <span className="text-2xl">➕</span>
-            <span className="font-medium text-gray-900">Créer un domaine</span>
+            <Plus className="w-6 h-6" style={{ color: 'var(--color-text-muted)' }} />
+            <span className="font-medium" style={{ color: 'var(--color-text)' }}>Créer un domaine</span>
           </Link>
           <Link
             href="/admin/modules"
-            className="flex items-center gap-3 p-4 bg-white rounded-lg border border-gray-200 hover:border-blue-300 hover:shadow-md transition-all"
+            className="flex items-center gap-3 p-4 rounded-lg transition-all themed-hover-card hover:shadow-md"
+            style={{ backgroundColor: 'var(--color-bg-elevated)', border: '1px solid var(--color-border)' }}
           >
-            <span className="text-2xl">📝</span>
-            <span className="font-medium text-gray-900">Gérer les modules</span>
+            <FileText className="w-6 h-6" style={{ color: 'var(--color-text-muted)' }} />
+            <span className="font-medium" style={{ color: 'var(--color-text)' }}>Gérer les modules</span>
           </Link>
           <Link
             href="/"
             target="_blank"
-            className="flex items-center gap-3 p-4 bg-white rounded-lg border border-gray-200 hover:border-blue-300 hover:shadow-md transition-all"
+            className="flex items-center gap-3 p-4 rounded-lg transition-all themed-hover-card hover:shadow-md"
+            style={{ backgroundColor: 'var(--color-bg-elevated)', border: '1px solid var(--color-border)' }}
           >
-            <span className="text-2xl">👁️</span>
-            <span className="font-medium text-gray-900">Voir le site</span>
+            <Eye className="w-6 h-6" style={{ color: 'var(--color-text-muted)' }} />
+            <span className="font-medium" style={{ color: 'var(--color-text)' }}>Voir le site</span>
           </Link>
         </div>
       </div>

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import { Lightbulb } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
@@ -28,6 +29,12 @@ const PRACTICE_TYPES = [
   { value: 'PROJET', label: 'Projet' },
   { value: 'AUTO_EVALUATION', label: 'Auto-évaluation' },
 ];
+
+const inputStyle = {
+  border: '1px solid var(--color-border)',
+  backgroundColor: 'var(--color-bg)',
+  color: 'var(--color-text)',
+};
 
 export function LessonEditor({ initialData, onChange }: LessonEditorProps) {
   const [activeTab, setActiveTab] = useState<'theory' | 'quiz' | 'practice'>('theory');
@@ -89,17 +96,18 @@ export function LessonEditor({ initialData, onChange }: LessonEditorProps) {
   return (
     <div className="space-y-6">
       {/* Tab navigation */}
-      <div className="border-b border-gray-200">
+      <div style={{ borderBottom: '1px solid var(--color-border)' }}>
         <nav className="flex gap-4">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`pb-4 px-1 text-sm font-medium transition-colors ${
+              className="pb-4 px-1 text-sm font-medium transition-colors"
+              style={
                 activeTab === tab.id
-                  ? 'text-blue-600 border-b-2 border-blue-600'
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
+                  ? { color: 'var(--color-primary)', borderBottom: '2px solid var(--color-primary)' }
+                  : { color: 'var(--color-text-muted)' }
+              }
             >
               {tab.label}
             </button>
@@ -124,9 +132,10 @@ export function LessonEditor({ initialData, onChange }: LessonEditorProps) {
                     value="LEGACY"
                     checked={data.mode === 'LEGACY'}
                     onChange={() => updateData({ mode: 'LEGACY' })}
-                    className="w-4 h-4 text-blue-600"
+                    className="w-4 h-4"
+                    style={{ accentColor: 'var(--color-primary)' }}
                   />
-                  <span className="text-sm font-medium text-gray-700">
+                  <span className="text-sm font-medium" style={{ color: 'var(--color-text-secondary)' }}>
                     Mode classique (onglets)
                   </span>
                 </label>
@@ -137,14 +146,15 @@ export function LessonEditor({ initialData, onChange }: LessonEditorProps) {
                     value="SLIDES"
                     checked={data.mode === 'SLIDES'}
                     onChange={() => updateData({ mode: 'SLIDES' })}
-                    className="w-4 h-4 text-blue-600"
+                    className="w-4 h-4"
+                    style={{ accentColor: 'var(--color-primary)' }}
                   />
-                  <span className="text-sm font-medium text-gray-700">
+                  <span className="text-sm font-medium" style={{ color: 'var(--color-text-secondary)' }}>
                     Mode slides (style Duolingo)
                   </span>
                 </label>
               </div>
-              <p className="text-sm text-gray-500 mt-2">
+              <p className="text-sm mt-2" style={{ color: 'var(--color-text-muted)' }}>
                 {data.mode === 'SLIDES'
                   ? 'La théorie sera découpée en slides navigables. Chaque titre ## crée une nouvelle slide.'
                   : 'La théorie, le quiz et la pratique s\'affichent dans des onglets séparés.'}
@@ -158,11 +168,11 @@ export function LessonEditor({ initialData, onChange }: LessonEditorProps) {
               <CardTitle>Contenu théorique</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-gray-500 mb-4">
+              <p className="text-sm mb-4" style={{ color: 'var(--color-text-muted)' }}>
                 Utilisez la syntaxe Markdown pour formater votre contenu (titres, listes, code, etc.)
                 {data.mode === 'SLIDES' && (
-                  <span className="block mt-1 text-blue-600">
-                    💡 En mode slides, chaque titre ## crée une nouvelle slide.
+                  <span className="mt-1 flex items-center gap-1" style={{ color: 'var(--color-primary)' }}>
+                    <Lightbulb className="w-4 h-4 inline" /> En mode slides, chaque titre ## crée une nouvelle slide.
                   </span>
                 )}
               </p>
@@ -170,15 +180,16 @@ export function LessonEditor({ initialData, onChange }: LessonEditorProps) {
                 value={data.theoryContent}
                 onChange={(e) => updateData({ theoryContent: e.target.value })}
                 rows={20}
-                className="w-full font-mono text-sm border border-gray-300 rounded-lg p-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full font-mono text-sm rounded-lg p-4 themed-focus"
+                style={inputStyle}
                 placeholder="# Titre principal&#10;&#10;## Section 1&#10;&#10;Votre contenu ici...&#10;&#10;- Point 1&#10;- Point 2&#10;&#10;```code```"
               />
               {data.mode === 'SLIDES' && theorySections.length > 0 && (
-                <div className="mt-4 p-3 bg-gray-50 rounded-lg">
-                  <p className="text-sm font-medium text-gray-700 mb-2">
+                <div className="mt-4 p-3 rounded-lg" style={{ backgroundColor: 'var(--color-bg-secondary)' }}>
+                  <p className="text-sm font-medium mb-2" style={{ color: 'var(--color-text-secondary)' }}>
                     Slides détectées ({theorySections.length}):
                   </p>
-                  <ul className="text-sm text-gray-600 space-y-1">
+                  <ul className="text-sm space-y-1" style={{ color: 'var(--color-text-secondary)' }}>
                     {theorySections.map((section, index) => (
                       <li key={section.id}>
                         {index + 1}. {section.title}
@@ -212,7 +223,7 @@ export function LessonEditor({ initialData, onChange }: LessonEditorProps) {
                   }
                 />
               </div>
-              <p className="text-sm text-gray-500 mt-2">
+              <p className="text-sm mt-2" style={{ color: 'var(--color-text-muted)' }}>
                 L&apos;apprenant doit obtenir au moins ce pourcentage pour réussir le quiz.
               </p>
             </CardContent>
@@ -234,9 +245,9 @@ export function LessonEditor({ initialData, onChange }: LessonEditorProps) {
           </Button>
 
           {data.questions.length === 0 && (
-            <div className="text-center py-8 bg-gray-50 rounded-lg border border-dashed border-gray-300">
-              <p className="text-gray-500">Aucune question ajoutée</p>
-              <p className="text-sm text-gray-400 mt-1">
+            <div className="text-center py-8 rounded-lg" style={{ backgroundColor: 'var(--color-bg-secondary)', border: '1px dashed var(--color-border)' }}>
+              <p style={{ color: 'var(--color-text-muted)' }}>Aucune question ajoutée</p>
+              <p className="text-sm mt-1" style={{ color: 'var(--ctp-overlay1)' }}>
                 Cliquez sur &quot;Ajouter une question&quot; pour commencer
               </p>
             </div>
@@ -252,13 +263,14 @@ export function LessonEditor({ initialData, onChange }: LessonEditorProps) {
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-text-secondary)' }}>
                 Type de pratique
               </label>
               <select
                 value={data.practiceType}
                 onChange={(e) => updateData({ practiceType: e.target.value })}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full rounded-lg px-4 py-2 themed-focus"
+                style={inputStyle}
               >
                 {PRACTICE_TYPES.map((type) => (
                   <option key={type.value} value={type.value}>
@@ -269,7 +281,7 @@ export function LessonEditor({ initialData, onChange }: LessonEditorProps) {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-text-secondary)' }}>
                 Durée du timer (minutes)
               </label>
               <div className="w-32">
@@ -283,23 +295,24 @@ export function LessonEditor({ initialData, onChange }: LessonEditorProps) {
                   }
                 />
               </div>
-              <p className="text-sm text-gray-500 mt-2">
+              <p className="text-sm mt-2" style={{ color: 'var(--color-text-muted)' }}>
                 Durée minimum avant que l&apos;apprenant puisse valider l&apos;exercice (1-60 minutes).
               </p>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-text-secondary)' }}>
                 Instructions de pratique
               </label>
               <textarea
                 value={data.practiceInstructions}
                 onChange={(e) => updateData({ practiceInstructions: e.target.value })}
                 rows={8}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full rounded-lg px-4 py-2 themed-focus"
+                style={inputStyle}
                 placeholder="Décrivez les étapes de la pratique que l'apprenant doit effectuer...&#10;&#10;1. Première étape&#10;2. Deuxième étape&#10;3. etc."
               />
-              <p className="text-sm text-gray-500 mt-2">
+              <p className="text-sm mt-2" style={{ color: 'var(--color-text-muted)' }}>
                 Ces instructions seront affichées à l&apos;apprenant après qu&apos;il ait réussi le quiz.
               </p>
             </div>

@@ -3,17 +3,18 @@
 import { type ReactNode, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
+import { Settings, BarChart3, Home, Package, BookOpen, FileText, LogOut, type LucideIcon } from 'lucide-react';
 
 interface AdminLayoutProps {
   children: ReactNode;
 }
 
-const navItems = [
-  { href: '/admin', label: 'Dashboard', icon: '📊' },
-  { href: '/admin/domains', label: 'Domaines', icon: '🏠' },
-  { href: '/admin/packs', label: 'Packs', icon: '📦' },
-  { href: '/admin/disciplines', label: 'Disciplines', icon: '📚' },
-  { href: '/admin/modules', label: 'Modules', icon: '📝' },
+const navItems: { href: string; label: string; icon: LucideIcon }[] = [
+  { href: '/admin', label: 'Dashboard', icon: BarChart3 },
+  { href: '/admin/domains', label: 'Domaines', icon: Home },
+  { href: '/admin/packs', label: 'Packs', icon: Package },
+  { href: '/admin/disciplines', label: 'Disciplines', icon: BookOpen },
+  { href: '/admin/modules', label: 'Modules', icon: FileText },
 ];
 
 export default function AdminLayout({ children }: AdminLayoutProps) {
@@ -59,19 +60,19 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   // Loading state
   if (isAuthenticated === null) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-100">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--color-bg)' }}>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2" style={{ borderColor: 'var(--color-primary)' }} />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen" style={{ backgroundColor: 'var(--color-bg)' }}>
       {/* Sidebar */}
-      <aside className="fixed inset-y-0 left-0 w-64 bg-gray-900 text-white">
-        <div className="p-4 border-b border-gray-700">
+      <aside className="fixed inset-y-0 left-0 w-64" style={{ backgroundColor: 'var(--color-bg-secondary)', color: 'var(--color-text)' }}>
+        <div className="p-4" style={{ borderBottom: '1px solid var(--color-border)' }}>
           <Link href="/admin" className="flex items-center gap-2">
-            <span className="text-2xl">⚙️</span>
+            <Settings className="w-6 h-6" />
             <span className="font-bold text-lg">Admin Panel</span>
           </Link>
         </div>
@@ -86,23 +87,29 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                 href={item.href}
                 className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
                   isActive
-                    ? 'bg-blue-600 text-white'
-                    : 'text-gray-300 hover:bg-gray-800 hover:text-white'
+                    ? ''
+                    : 'themed-hover-nav'
                 }`}
+                style={
+                  isActive
+                    ? { backgroundColor: 'var(--color-primary)', color: 'var(--color-bg)' }
+                    : { color: 'var(--color-text-muted)' }
+                }
               >
-                <span>{item.icon}</span>
+                <item.icon className="w-5 h-5" />
                 <span>{item.label}</span>
               </Link>
             );
           })}
         </nav>
 
-        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-700">
+        <div className="absolute bottom-0 left-0 right-0 p-4" style={{ borderTop: '1px solid var(--color-border)' }}>
           <button
             onClick={handleLogout}
-            className="flex items-center gap-3 px-3 py-2 w-full text-gray-300 hover:bg-gray-800 hover:text-white rounded-lg transition-colors"
+            className="flex items-center gap-3 px-3 py-2 w-full rounded-lg transition-colors themed-hover-nav"
+            style={{ color: 'var(--color-text-muted)' }}
           >
-            <span>🚪</span>
+            <LogOut className="w-5 h-5" />
             <span>Déconnexion</span>
           </button>
         </div>

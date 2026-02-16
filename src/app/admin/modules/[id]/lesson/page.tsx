@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
-import { Copy, Check } from 'lucide-react';
+import { Copy, Check, Shuffle } from 'lucide-react';
 
 interface Question {
   id?: string;
@@ -42,6 +42,12 @@ const QUESTION_TYPES = [
   { value: 'MULTIPLE_CHOICE', label: 'Choix multiple' },
   { value: 'SHORT_TEXT', label: 'Réponse courte' },
 ];
+
+const inputStyle = {
+  border: '1px solid var(--color-border)',
+  backgroundColor: 'var(--color-bg)',
+  color: 'var(--color-text)',
+};
 
 export default function LessonEditorPage({ params }: { params: Promise<{ id: string }> }) {
   const { id: moduleId } = use(params);
@@ -180,7 +186,7 @@ export default function LessonEditorPage({ params }: { params: Promise<{ id: str
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2" style={{ borderColor: 'var(--color-primary)' }} />
       </div>
     );
   }
@@ -188,22 +194,23 @@ export default function LessonEditorPage({ params }: { params: Promise<{ id: str
   return (
     <div className="max-w-4xl">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Éditeur de leçon</h1>
-        <p className="text-gray-600 mt-1">Module: {moduleName}</p>
+        <h1 className="text-3xl font-bold" style={{ color: 'var(--color-text)' }}>Éditeur de leçon</h1>
+        <p className="mt-1" style={{ color: 'var(--color-text-secondary)' }}>Module: {moduleName}</p>
       </div>
 
       {/* Tab navigation */}
-      <div className="border-b border-gray-200 mb-6">
+      <div className="mb-6" style={{ borderBottom: '1px solid var(--color-border)' }}>
         <nav className="flex gap-4">
           {(['theory', 'quiz', 'practice'] as const).map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`pb-4 px-1 text-sm font-medium transition-colors ${
+              className="pb-4 px-1 text-sm font-medium transition-colors"
+              style={
                 activeTab === tab
-                  ? 'text-blue-600 border-b-2 border-blue-600'
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
+                  ? { color: 'var(--color-primary)', borderBottom: '2px solid var(--color-primary)' }
+                  : { color: 'var(--color-text-muted)' }
+              }
             >
               {tab === 'theory' && 'Théorie'}
               {tab === 'quiz' && `Quiz (${lessonData.questions.length})`}
@@ -220,7 +227,7 @@ export default function LessonEditorPage({ params }: { params: Promise<{ id: str
             <CardTitle>Contenu théorique</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-gray-500 mb-4">
+            <p className="text-sm mb-4" style={{ color: 'var(--color-text-muted)' }}>
               Utilisez la syntaxe Markdown pour formater votre contenu.
             </p>
             <textarea
@@ -229,7 +236,8 @@ export default function LessonEditorPage({ params }: { params: Promise<{ id: str
                 setLessonData((prev) => ({ ...prev, theoryContent: e.target.value }))
               }
               rows={20}
-              className="w-full font-mono text-sm border border-gray-300 rounded-lg p-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full font-mono text-sm rounded-lg p-4 themed-focus"
+              style={inputStyle}
               placeholder="# Titre principal&#10;&#10;## Section&#10;&#10;Votre contenu ici..."
             />
           </CardContent>
@@ -262,14 +270,14 @@ export default function LessonEditorPage({ params }: { params: Promise<{ id: str
               </div>
 
               {/* Feature 005: Randomization settings */}
-              <div className="border-t border-gray-200 pt-6">
-                <h3 className="text-sm font-medium text-gray-700 mb-4">
-                  🎲 Randomisation (Feature 005)
+              <div className="pt-6" style={{ borderTop: '1px solid var(--color-border)' }}>
+                <h3 className="text-sm font-medium mb-4" style={{ color: 'var(--color-text-secondary)' }}>
+                  <Shuffle className="w-4 h-4 inline mr-1" /> Randomisation (Feature 005)
                 </h3>
 
                 {/* Questions to show */}
                 <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-text-secondary)' }}>
                     Nombre de questions à afficher
                   </label>
                   <div className="flex items-center gap-3">
@@ -289,11 +297,11 @@ export default function LessonEditorPage({ params }: { params: Promise<{ id: str
                         }}
                       />
                     </div>
-                    <span className="text-sm text-gray-500">
+                    <span className="text-sm" style={{ color: 'var(--color-text-muted)' }}>
                       sur {lessonData.questions.length} questions disponibles
                     </span>
                   </div>
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs mt-1" style={{ color: 'var(--color-text-muted)' }}>
                     Laissez vide pour afficher toutes les questions. Sinon, un sous-ensemble aléatoire sera sélectionné.
                   </p>
                 </div>
@@ -310,13 +318,14 @@ export default function LessonEditorPage({ params }: { params: Promise<{ id: str
                           shuffleQuestions: e.target.checked,
                         }))
                       }
-                      className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      className="w-4 h-4 rounded"
+                      style={{ accentColor: 'var(--color-primary)' }}
                     />
                     <div>
-                      <span className="text-sm font-medium text-gray-700">
+                      <span className="text-sm font-medium" style={{ color: 'var(--color-text-secondary)' }}>
                         Mélanger l&apos;ordre des questions
                       </span>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
                         L&apos;ordre des questions changera à chaque tentative
                       </p>
                     </div>
@@ -332,13 +341,14 @@ export default function LessonEditorPage({ params }: { params: Promise<{ id: str
                           shuffleAnswers: e.target.checked,
                         }))
                       }
-                      className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      className="w-4 h-4 rounded"
+                      style={{ accentColor: 'var(--color-primary)' }}
                     />
                     <div>
-                      <span className="text-sm font-medium text-gray-700">
+                      <span className="text-sm font-medium" style={{ color: 'var(--color-text-secondary)' }}>
                         Mélanger l&apos;ordre des réponses
                       </span>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
                         Les options A/B/C/D seront réassignées aléatoirement
                       </p>
                     </div>
@@ -359,13 +369,14 @@ export default function LessonEditorPage({ params }: { params: Promise<{ id: str
                       <button
                         type="button"
                         onClick={() => copyToClipboard(question.id!, `q-${question.id}`)}
-                        className="flex items-center gap-1 mt-1 text-xs text-gray-400 hover:text-gray-600 transition-colors font-mono"
+                        className="flex items-center gap-1 mt-1 text-xs transition-colors font-mono"
+                        style={{ color: 'var(--ctp-overlay1)' }}
                         title="Cliquer pour copier l'UUID"
                       >
                         {copiedId === `q-${question.id}` ? (
                           <>
-                            <Check className="w-3 h-3 text-green-500" />
-                            <span className="text-green-500">Copié!</span>
+                            <Check className="w-3 h-3" style={{ color: 'var(--color-success)' }} />
+                            <span style={{ color: 'var(--color-success)' }}>Copié!</span>
                           </>
                         ) : (
                           <>
@@ -380,7 +391,7 @@ export default function LessonEditorPage({ params }: { params: Promise<{ id: str
                     variant="ghost"
                     size="sm"
                     onClick={() => removeQuestion(qIndex)}
-                    className="text-red-600"
+                    style={{ color: 'var(--color-error)' }}
                   >
                     Supprimer
                   </Button>
@@ -388,7 +399,7 @@ export default function LessonEditorPage({ params }: { params: Promise<{ id: str
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
+                  <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-text-secondary)' }}>Type</label>
                   <select
                     value={question.questionType}
                     onChange={(e) =>
@@ -404,7 +415,8 @@ export default function LessonEditorPage({ params }: { params: Promise<{ id: str
                         correctAnswer: e.target.value === 'MULTIPLE_CHOICE' ? [] : '',
                       })
                     }
-                    className="w-full border border-gray-300 rounded-lg px-4 py-2"
+                    className="w-full rounded-lg px-4 py-2"
+                    style={inputStyle}
                   >
                     {QUESTION_TYPES.map((type) => (
                       <option key={type.value} value={type.value}>
@@ -415,20 +427,21 @@ export default function LessonEditorPage({ params }: { params: Promise<{ id: str
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Question</label>
+                  <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-text-secondary)' }}>Question</label>
                   <textarea
                     value={question.questionText}
                     onChange={(e) => updateQuestion(qIndex, { questionText: e.target.value })}
                     rows={2}
-                    className="w-full border border-gray-300 rounded-lg px-4 py-2"
+                    className="w-full rounded-lg px-4 py-2"
+                    style={inputStyle}
                   />
                 </div>
 
                 {question.questionType !== 'SHORT_TEXT' && question.options && (
                   <div className="space-y-2">
-                    <label className="block text-sm font-medium text-gray-700">
+                    <label className="block text-sm font-medium" style={{ color: 'var(--color-text-secondary)' }}>
                       Options
-                      <span className="text-xs text-gray-400 font-normal ml-2">
+                      <span className="text-xs font-normal ml-2" style={{ color: 'var(--ctp-overlay1)' }}>
                         (cochez pour marquer comme correcte)
                       </span>
                     </label>
@@ -457,6 +470,7 @@ export default function LessonEditorPage({ params }: { params: Promise<{ id: str
                               }
                             }}
                             className="w-4 h-4"
+                            style={{ accentColor: 'var(--color-primary)' }}
                             title={isCorrect ? 'Réponse correcte' : 'Marquer comme correcte'}
                           />
 
@@ -470,9 +484,12 @@ export default function LessonEditorPage({ params }: { params: Promise<{ id: str
                               updateQuestion(qIndex, { options: newOptions });
                             }}
                             placeholder={`Option ${oIndex + 1}`}
-                            className={`flex-1 border rounded-lg px-3 py-2 ${
-                              isCorrect ? 'border-green-400 bg-green-50' : 'border-gray-300'
-                            }`}
+                            className="flex-1 rounded-lg px-3 py-2"
+                            style={
+                              isCorrect
+                                ? { border: '1px solid var(--color-success)', backgroundColor: 'color-mix(in srgb, var(--color-success) 15%, transparent)', color: 'var(--color-text)' }
+                                : inputStyle
+                            }
                           />
 
                           {/* Feature 005: Option UUID with copy (T039) */}
@@ -480,11 +497,12 @@ export default function LessonEditorPage({ params }: { params: Promise<{ id: str
                             <button
                               type="button"
                               onClick={() => copyToClipboard(option.id, `o-${option.id}`)}
-                              className="flex items-center gap-1 px-2 py-1 text-xs text-gray-400 hover:text-gray-600 transition-colors font-mono rounded hover:bg-gray-100"
+                              className="flex items-center gap-1 px-2 py-1 text-xs transition-colors font-mono rounded themed-hover-row"
+                              style={{ color: 'var(--ctp-overlay1)' }}
                               title="Cliquer pour copier l'UUID de l'option"
                             >
                               {copiedId === `o-${option.id}` ? (
-                                <Check className="w-3 h-3 text-green-500" />
+                                <Check className="w-3 h-3" style={{ color: 'var(--color-success)' }} />
                               ) : (
                                 <>
                                   <Copy className="w-3 h-3" />
@@ -533,7 +551,7 @@ export default function LessonEditorPage({ params }: { params: Promise<{ id: str
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-text-secondary)' }}>
                 Type de pratique
               </label>
               <select
@@ -541,7 +559,8 @@ export default function LessonEditorPage({ params }: { params: Promise<{ id: str
                 onChange={(e) =>
                   setLessonData((prev) => ({ ...prev, practiceType: e.target.value }))
                 }
-                className="w-full border border-gray-300 rounded-lg px-4 py-2"
+                className="w-full rounded-lg px-4 py-2"
+                style={inputStyle}
               >
                 {PRACTICE_TYPES.map((type) => (
                   <option key={type.value} value={type.value}>
@@ -552,7 +571,7 @@ export default function LessonEditorPage({ params }: { params: Promise<{ id: str
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-text-secondary)' }}>
                 Durée du timer (minutes)
               </label>
               <div className="w-32">
@@ -569,20 +588,21 @@ export default function LessonEditorPage({ params }: { params: Promise<{ id: str
                   }
                 />
               </div>
-              <p className="text-sm text-gray-500 mt-1">
+              <p className="text-sm mt-1" style={{ color: 'var(--color-text-muted)' }}>
                 Durée minimum avant que l&apos;apprenant puisse valider l&apos;exercice (1-60 minutes).
               </p>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Instructions</label>
+              <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-text-secondary)' }}>Instructions</label>
               <textarea
                 value={lessonData.practiceInstructions}
                 onChange={(e) =>
                   setLessonData((prev) => ({ ...prev, practiceInstructions: e.target.value }))
                 }
                 rows={6}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2"
+                className="w-full rounded-lg px-4 py-2"
+                style={inputStyle}
                 placeholder="Décrivez les étapes de la pratique..."
               />
             </div>
@@ -592,8 +612,8 @@ export default function LessonEditorPage({ params }: { params: Promise<{ id: str
 
       {/* Error message */}
       {error && (
-        <div className="mt-6 bg-red-50 border border-red-200 rounded-lg p-4">
-          <p className="text-red-700">{error}</p>
+        <div className="mt-6 rounded-lg p-4" style={{ backgroundColor: 'color-mix(in srgb, var(--color-error) 15%, transparent)', border: '1px solid var(--color-error)' }}>
+          <p style={{ color: 'var(--color-error)' }}>{error}</p>
         </div>
       )}
 

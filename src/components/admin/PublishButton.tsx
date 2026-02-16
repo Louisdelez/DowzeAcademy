@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { Check } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 
 interface PublishButtonProps {
@@ -43,8 +44,8 @@ export function PublishButton({
 
   if (isPublished) {
     return (
-      <span className="inline-flex items-center gap-1 text-green-600 text-sm">
-        <span>✓</span> Publié
+      <span className="inline-flex items-center gap-1 text-sm" style={{ color: 'var(--color-success)' }}>
+        <Check className="w-4 h-4" /> Publié
       </span>
     );
   }
@@ -60,7 +61,7 @@ export function PublishButton({
         Publier
       </Button>
       {error && (
-        <p className="text-red-600 text-xs mt-1">{error}</p>
+        <p className="text-xs mt-1" style={{ color: 'var(--color-error)' }}>{error}</p>
       )}
     </div>
   );

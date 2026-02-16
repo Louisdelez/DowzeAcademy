@@ -21,6 +21,12 @@ interface ContentFormProps {
   submitLabel?: string;
 }
 
+const inputStyle = {
+  border: '1px solid var(--color-border)',
+  backgroundColor: 'var(--color-bg)',
+  color: 'var(--color-text)',
+};
+
 export function ContentForm({
   title,
   fields,
@@ -52,37 +58,39 @@ export function ContentForm({
   };
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-6">
-      <h2 className="text-xl font-semibold text-gray-900 mb-6">{title}</h2>
+    <div className="rounded-lg p-6" style={{ backgroundColor: 'var(--color-bg-elevated)', border: '1px solid var(--color-border)' }}>
+      <h2 className="text-xl font-semibold mb-6" style={{ color: 'var(--color-text)' }}>{title}</h2>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         {fields.map((field) => (
           <div key={field.name}>
             {field.type === 'textarea' ? (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-text-secondary)' }}>
                   {field.label}
-                  {field.required && <span className="text-red-500 ml-1">*</span>}
+                  {field.required && <span className="ml-1" style={{ color: 'var(--color-error)' }}>*</span>}
                 </label>
                 <textarea
                   value={formData[field.name] || ''}
                   onChange={(e) => handleChange(field.name, e.target.value)}
                   required={field.required}
                   rows={4}
-                  className="block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="block w-full rounded-lg px-4 py-2.5 themed-focus"
+                  style={inputStyle}
                 />
               </div>
             ) : field.type === 'select' ? (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-text-secondary)' }}>
                   {field.label}
-                  {field.required && <span className="text-red-500 ml-1">*</span>}
+                  {field.required && <span className="ml-1" style={{ color: 'var(--color-error)' }}>*</span>}
                 </label>
                 <select
                   value={formData[field.name] || ''}
                   onChange={(e) => handleChange(field.name, e.target.value)}
                   required={field.required}
-                  className="block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-h-[44px]"
+                  className="block w-full rounded-lg px-4 py-2.5 min-h-[44px] themed-focus"
+                  style={inputStyle}
                 >
                   <option value="">Sélectionner...</option>
                   {field.options?.map((opt) => (
@@ -104,8 +112,8 @@ export function ContentForm({
         ))}
 
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-            <p className="text-red-700 text-sm">{error}</p>
+          <div className="rounded-lg p-3" style={{ backgroundColor: 'color-mix(in srgb, var(--color-error) 15%, transparent)', border: '1px solid var(--color-error)' }}>
+            <p className="text-sm" style={{ color: 'var(--color-error)' }}>{error}</p>
           </div>
         )}
 

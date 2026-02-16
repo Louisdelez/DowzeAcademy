@@ -116,8 +116,8 @@ export default function AdminModulesPage() {
     <div>
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Modules</h1>
-          <p className="text-gray-600 mt-1">Gérez les modules et leur contenu pédagogique</p>
+          <h1 className="text-3xl font-bold" style={{ color: 'var(--color-text)' }}>Modules</h1>
+          <p className="mt-1" style={{ color: 'var(--color-text-secondary)' }}>Gérez les modules et leur contenu pédagogique</p>
         </div>
         <Link href="/admin/modules?action=create">
           <Button>Créer un module</Button>
@@ -127,40 +127,40 @@ export default function AdminModulesPage() {
       {isLoading ? (
         <div className="space-y-4">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-20 bg-gray-200 rounded-lg animate-pulse" />
+            <div key={i} className="h-20 rounded-lg animate-pulse" style={{ backgroundColor: 'var(--color-bg-tertiary)' }} />
           ))}
         </div>
       ) : modules.length === 0 ? (
-        <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
-          <p className="text-gray-500">Aucun module créé</p>
-          <Link href="/admin/modules?action=create" className="text-blue-600 hover:underline mt-2 inline-block">
+        <div className="text-center py-12 rounded-lg" style={{ backgroundColor: 'var(--color-bg-elevated)', border: '1px solid var(--color-border)' }}>
+          <p style={{ color: 'var(--color-text-muted)' }}>Aucun module créé</p>
+          <Link href="/admin/modules?action=create" className="hover:underline mt-2 inline-block" style={{ color: 'var(--color-primary)' }}>
             Créer votre premier module
           </Link>
         </div>
       ) : (
-        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+        <div className="rounded-lg overflow-hidden" style={{ backgroundColor: 'var(--color-bg-elevated)', border: '1px solid var(--color-border)' }}>
           <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200">
+            <thead style={{ backgroundColor: 'var(--color-bg-secondary)', borderBottom: '1px solid var(--color-border)' }}>
               <tr>
-                <th className="px-6 py-3 text-left text-sm font-medium text-gray-500">Module</th>
-                <th className="px-6 py-3 text-left text-sm font-medium text-gray-500">Hiérarchie</th>
-                <th className="px-6 py-3 text-left text-sm font-medium text-gray-500">Contenu</th>
-                <th className="px-6 py-3 text-right text-sm font-medium text-gray-500">Actions</th>
+                <th className="px-6 py-3 text-left text-sm font-medium" style={{ color: 'var(--color-text-muted)' }}>Module</th>
+                <th className="px-6 py-3 text-left text-sm font-medium" style={{ color: 'var(--color-text-muted)' }}>Hiérarchie</th>
+                <th className="px-6 py-3 text-left text-sm font-medium" style={{ color: 'var(--color-text-muted)' }}>Contenu</th>
+                <th className="px-6 py-3 text-right text-sm font-medium" style={{ color: 'var(--color-text-muted)' }}>Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
-              {modules.map((module) => (
-                <tr key={module.id} className="hover:bg-gray-50">
+            <tbody>
+              {modules.map((module, index) => (
+                <tr key={module.id} className="themed-hover-row" style={index < modules.length - 1 ? { borderBottom: '1px solid var(--color-border)' } : undefined}>
                   <td className="px-6 py-4">
-                    <p className="font-medium text-gray-900">{module.name}</p>
+                    <p className="font-medium" style={{ color: 'var(--color-text)' }}>{module.name}</p>
                     {module.description && (
-                      <p className="text-sm text-gray-500 truncate max-w-xs">
+                      <p className="text-sm truncate max-w-xs" style={{ color: 'var(--color-text-muted)' }}>
                         {module.description}
                       </p>
                     )}
                   </td>
                   <td className="px-6 py-4">
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
                       {module.discipline.pack.domain.name} &gt; {module.discipline.pack.name} &gt;{' '}
                       {module.discipline.name}
                     </p>
@@ -185,7 +185,8 @@ export default function AdminModulesPage() {
                         variant="ghost"
                         size="sm"
                         onClick={() => handleDelete(module.id)}
-                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        className="themed-hover-error"
+                        style={{ color: 'var(--color-error)' }}
                       >
                         Supprimer
                       </Button>

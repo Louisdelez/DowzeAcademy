@@ -1,5 +1,6 @@
 'use client';
 
+import { AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 
 interface StaleDataWarningProps {
@@ -12,12 +13,12 @@ export function StaleDataWarning({
   onRefresh,
 }: StaleDataWarningProps) {
   return (
-    <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
+    <div className="rounded-lg p-4 mb-6" style={{ backgroundColor: 'color-mix(in srgb, var(--color-warning) 15%, transparent)', border: '1px solid var(--color-warning)' }}>
       <div className="flex items-start gap-3">
-        <span className="text-2xl">⚠️</span>
+        <AlertTriangle className="w-6 h-6 shrink-0" style={{ color: 'var(--color-warning)' }} />
         <div className="flex-1">
-          <h4 className="font-medium text-amber-800">Données obsolètes</h4>
-          <p className="text-amber-700 text-sm mt-1">{message}</p>
+          <h4 className="font-medium" style={{ color: 'var(--color-warning)' }}>Données obsolètes</h4>
+          <p className="text-sm mt-1" style={{ color: 'var(--color-warning)' }}>{message}</p>
           {onRefresh && (
             <Button
               variant="outline"
