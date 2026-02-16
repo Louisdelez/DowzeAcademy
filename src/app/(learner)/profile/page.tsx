@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/Button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { ThemeSelector } from '@/components/ui/ThemeSelector';
 import { QuizAttemptHistory } from '@/components/lesson/QuizAttemptHistory';
+import { UserNotesSection } from '@/components/profile/UserNotesSection';
 
 export default function ProfilePage() {
   const { data: session, status } = useSession();
@@ -147,6 +148,9 @@ export default function ProfilePage() {
 
       {/* Feature 005: Quiz Attempt History */}
       <QuizAttemptHistory limit={5} />
+
+      {/* User Notes Section */}
+      <UserNotesSection />
 
       <Card>
         <CardHeader>

@@ -5,6 +5,7 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { GuidedModuleFlow } from '@/components/lesson/GuidedModuleFlow';
 import { Button } from '@/components/ui/Button';
+import { useAdminMode } from '@/lib/hooks/useAdminMode';
 import type { PracticeType, QuestionType, LessonMode } from '@/types/models';
 
 interface Question {
@@ -57,6 +58,7 @@ interface ProgressionState {
 export function ModuleContent({ moduleId, moduleName, lesson, learningContext }: ModuleContentProps) {
   const { status } = useSession();
   const router = useRouter();
+  const { isGameModeEnabled } = useAdminMode();
   const [isLoading, setIsLoading] = useState(true);
   const [isLocked, setIsLocked] = useState(false);
   const [progression, setProgression] = useState<ProgressionState | null>(null);
@@ -135,7 +137,8 @@ export function ModuleContent({ moduleId, moduleName, lesson, learningContext }:
     );
   }
 
-  if (isLocked) {
+  // Admin mode bypasses locked screen
+  if (isLocked && !isGameModeEnabled) {
     return (
       <div
         className="rounded-lg p-8 text-center"

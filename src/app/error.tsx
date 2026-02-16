@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
 
 interface ErrorProps {
@@ -31,7 +32,7 @@ export default function Error({ error, reset }: ErrorProps) {
           <Button onClick={reset} variant="primary">
             Réessayer
           </Button>
-          <a
+          <Link
             href="/"
             className="inline-block px-6 py-3 rounded-lg font-medium transition-colors"
             style={{
@@ -42,7 +43,7 @@ export default function Error({ error, reset }: ErrorProps) {
             }}
           >
             Retour à l&apos;accueil
-          </a>
+          </Link>
         </div>
       </div>
     </div>

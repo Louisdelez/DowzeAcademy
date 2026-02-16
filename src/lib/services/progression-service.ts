@@ -89,15 +89,17 @@ export async function getDisciplineProgressions(userId: string, disciplineId: st
 
 /**
  * Marks theory as viewed for a module
+ * @param bypassLock - If true, allows accessing locked modules (for admin mode)
  */
-export async function markTheoryViewed(userId: string, moduleId: string) {
+export async function markTheoryViewed(userId: string, moduleId: string, bypassLock = false) {
   const progression = await getOrCreateProgression(userId, moduleId);
 
   if (!progression) return null;
-  if (progression.status === ModuleProgressStatus.LOCKED) return null;
+  // Skip lock check if bypassLock is true (admin mode)
+  if (!bypassLock && progression.status === ModuleProgressStatus.LOCKED) return null;
 
   // Only update if not already in progress or completed
-  if (progression.status === ModuleProgressStatus.AVAILABLE) {
+  if (progression.status === ModuleProgressStatus.AVAILABLE || (bypassLock && progression.status === ModuleProgressStatus.LOCKED)) {
     return prisma.userProgression.update({
       where: { id: progression.id },
       data: {
@@ -128,14 +130,15 @@ export async function markQuizPassed(userId: string, moduleId: string) {
 
 /**
  * Marks practice as completed and potentially completes the module
+ * @param bypassQuizCheck - If true, allows completing practice without quiz (for admin mode)
  */
-export async function markPracticeCompleted(userId: string, moduleId: string) {
+export async function markPracticeCompleted(userId: string, moduleId: string, bypassQuizCheck = false) {
   const progression = await getOrCreateProgression(userId, moduleId);
 
   if (!progression) return null;
 
-  // Can only complete practice if quiz is passed
-  if (!progression.quizPassedAt) {
+  // Can only complete practice if quiz is passed (unless bypassed for admin mode)
+  if (!bypassQuizCheck && !progression.quizPassedAt) {
     return null;
   }
 

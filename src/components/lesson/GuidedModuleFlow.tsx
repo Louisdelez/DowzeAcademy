@@ -80,6 +80,59 @@ export function GuidedModuleFlow({
 }: GuidedModuleFlowProps) {
   const router = useRouter();
 
+  // All hooks must be called before any conditional returns (Rules of Hooks)
+  const theorySlides = useMemo(
+    () => parseTheorySlides(theoryContent),
+    [theoryContent]
+  );
+
+  const getInitialPhase = (): Phase => {
+    if (initialPracticeCompleted) return 'complete';
+    if (initialQuizPassed) return 'practice';
+    return 'theory';
+  };
+
+  const [phase, setPhase] = useState<Phase>(getInitialPhase);
+  const [theoryIndex, setTheoryIndex] = useState(0);
+  const [quizIndex, setQuizIndex] = useState(0);
+  const [answers, setAnswers] = useState<Record<string, string | string[]>>({});
+  const [showFeedback, setShowFeedback] = useState(false);
+  const [quizResult, setQuizResult] = useState<{
+    score: number;
+    passed: boolean;
+    feedback: QuizFeedback[];
+  } | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isCompletingPractice, setIsCompletingPractice] = useState(false);
+
+  const currentQuestion = questions[quizIndex];
+
+  const totalSlides = useMemo(() => {
+    if (phase === 'theory') return theorySlides.length;
+    if (phase === 'quiz') return questions.length;
+    return 1;
+  }, [phase, theorySlides.length, questions.length]);
+
+  const currentSlide = useMemo(() => {
+    if (phase === 'theory') return theoryIndex + 1;
+    if (phase === 'quiz') return quizIndex + 1;
+    return 1;
+  }, [phase, theoryIndex, quizIndex]);
+
+  const hasAnswer = useCallback(() => {
+    if (!currentQuestion) return false;
+    const answer = answers[currentQuestion.id];
+    if (!answer) return false;
+    if (Array.isArray(answer)) return answer.length > 0;
+    return answer.trim().length > 0;
+  }, [currentQuestion, answers]);
+
+  const handleAnswerChange = useCallback((answer: string | string[]) => {
+    if (!currentQuestion) return;
+    setAnswers((prev) => ({ ...prev, [currentQuestion.id]: answer }));
+    setShowFeedback(false);
+  }, [currentQuestion]);
+
   // If mode is SLIDES, use the new SlideContainer component
   if (mode === 'SLIDES') {
     return (
@@ -87,11 +140,10 @@ export function GuidedModuleFlow({
         moduleId={moduleId}
         moduleName={moduleName}
         lesson={{
-          id: lessonId || moduleId, // Feature 005: Use actual lessonId for quiz attempts
+          id: lessonId || moduleId,
           theory: theoryContent,
           practiceInstructions: practiceInstructions,
           practiceTimerDuration: practiceTimerDuration,
-          // Feature 005: Randomization settings
           shuffleQuestions,
           shuffleAnswers,
           questionsToShow,
@@ -114,67 +166,9 @@ export function GuidedModuleFlow({
   }
 
   // LEGACY mode - continue with existing implementation
-
-  // Parse theory content into slides
-  const theorySlides = useMemo(
-    () => parseTheorySlides(theoryContent),
-    [theoryContent]
-  );
-
-  // Determine initial phase based on progression
-  const getInitialPhase = (): Phase => {
-    if (initialPracticeCompleted) return 'complete';
-    if (initialQuizPassed) return 'practice';
-    return 'theory';
-  };
-
-  // State
-  const [phase, setPhase] = useState<Phase>(getInitialPhase);
-  const [theoryIndex, setTheoryIndex] = useState(0);
-  const [quizIndex, setQuizIndex] = useState(0);
-  const [answers, setAnswers] = useState<Record<string, string | string[]>>({});
-  const [showFeedback, setShowFeedback] = useState(false);
-  const [quizResult, setQuizResult] = useState<{
-    score: number;
-    passed: boolean;
-    feedback: QuizFeedback[];
-  } | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isCompletingPractice, setIsCompletingPractice] = useState(false);
-
-  // Computed values
-  const currentQuestion = questions[quizIndex];
   const currentTheorySlide = theorySlides[theoryIndex];
   const isLastTheorySlide = theoryIndex === theorySlides.length - 1;
   const isLastQuizQuestion = quizIndex === questions.length - 1;
-
-  const totalSlides = useMemo(() => {
-    if (phase === 'theory') return theorySlides.length;
-    if (phase === 'quiz') return questions.length;
-    return 1;
-  }, [phase, theorySlides.length, questions.length]);
-
-  const currentSlide = useMemo(() => {
-    if (phase === 'theory') return theoryIndex + 1;
-    if (phase === 'quiz') return quizIndex + 1;
-    return 1;
-  }, [phase, theoryIndex, quizIndex]);
-
-  // Check if current quiz question has an answer
-  const hasAnswer = useCallback(() => {
-    if (!currentQuestion) return false;
-    const answer = answers[currentQuestion.id];
-    if (!answer) return false;
-    if (Array.isArray(answer)) return answer.length > 0;
-    return answer.trim().length > 0;
-  }, [currentQuestion, answers]);
-
-  // Handle answer change
-  const handleAnswerChange = useCallback((answer: string | string[]) => {
-    if (!currentQuestion) return;
-    setAnswers((prev) => ({ ...prev, [currentQuestion.id]: answer }));
-    setShowFeedback(false);
-  }, [currentQuestion]);
 
   // Submit quiz to API
   const submitQuiz = async () => {
@@ -235,16 +229,16 @@ export function GuidedModuleFlow({
   };
 
   // Navigation handlers
-  const handleBack = useCallback(() => {
+  const handleBack = () => {
     if (phase === 'theory' && theoryIndex > 0) {
       setTheoryIndex((prev) => prev - 1);
     } else if (phase === 'quiz' && quizIndex > 0) {
       setQuizIndex((prev) => prev - 1);
       setShowFeedback(false);
     }
-  }, [phase, theoryIndex, quizIndex]);
+  };
 
-  const handleNext = useCallback(() => {
+  const handleNext = () => {
     if (phase === 'theory') {
       if (isLastTheorySlide) {
         setPhase('quiz');
@@ -266,7 +260,7 @@ export function GuidedModuleFlow({
         setShowFeedback(true);
       }
     }
-  }, [phase, isLastTheorySlide, isLastQuizQuestion, showFeedback]);
+  };
 
   // Get current feedback for quiz question
   const getCurrentFeedback = () => {

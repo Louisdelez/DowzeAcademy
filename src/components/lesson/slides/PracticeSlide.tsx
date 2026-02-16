@@ -1,8 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Clipboard, CheckSquare, Square, Target, Settings, ListChecks, ArrowRight } from 'lucide-react';
 import type { PracticeSlide as PracticeSlideType, SlideDirection } from '@/types/slides';
+import { renderMarkdownContent } from '@/lib/utils/markdown-renderer';
+import { parseExerciseContent } from '@/lib/utils/exercise-content-parser';
 
 interface PracticeSlideProps {
   slide: PracticeSlideType;
@@ -40,73 +42,16 @@ export function PracticeSlide({
     slide.checklist ? new Array(slide.checklist.length).fill(false) : []
   );
 
+  // Parse content to hide corrections (they are shown only in the ExerciseTimerModal popup)
+  const { exerciseContent } = useMemo(() => {
+    return parseExerciseContent(slide.content);
+  }, [slide.content]);
+
   const handleChecklistToggle = (index: number) => {
     const newChecked = [...checkedItems];
     newChecked[index] = !newChecked[index];
     setCheckedItems(newChecked);
     onChecklistChange?.(newChecked);
-  };
-
-  const renderInlineMarkdown = (text: string) => {
-    let processed = text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-    processed = processed.replace(
-      /`(.+?)`/g,
-      '<code style="background-color: var(--color-bg-tertiary); padding: 0 0.25rem; border-radius: 0.25rem; font-size: 0.875rem;">$1</code>'
-    );
-    return <span dangerouslySetInnerHTML={{ __html: processed }} />;
-  };
-
-  const renderContent = (content: string) => {
-    return content.split('\n').map((line, index) => {
-      if (line.startsWith('### ')) {
-        return (
-          <h3
-            key={index}
-            className="text-lg font-semibold mt-6 mb-3"
-            style={{ color: 'var(--color-text)' }}
-          >
-            {line.slice(4)}
-          </h3>
-        );
-      }
-      if (line.startsWith('- ')) {
-        return (
-          <li
-            key={index}
-            className="ml-4 list-disc"
-            style={{ color: 'var(--color-text-secondary)' }}
-          >
-            {renderInlineMarkdown(line.slice(2))}
-          </li>
-        );
-      }
-      if (/^\d+\.\s/.test(line)) {
-        return (
-          <li
-            key={index}
-            className="ml-4 list-decimal"
-            style={{ color: 'var(--color-text-secondary)' }}
-          >
-            {renderInlineMarkdown(line.replace(/^\d+\.\s/, ''))}
-          </li>
-        );
-      }
-      if (line.startsWith('```')) {
-        return null;
-      }
-      if (line.trim() === '') {
-        return <br key={index} />;
-      }
-      return (
-        <p
-          key={index}
-          className="my-2 leading-relaxed"
-          style={{ color: 'var(--color-text-secondary)' }}
-        >
-          {renderInlineMarkdown(line)}
-        </p>
-      );
-    });
   };
 
   return (
@@ -148,9 +93,9 @@ export function PracticeSlide({
           </div>
         </div>
 
-        {/* Slide content */}
+        {/* Slide content (without corrections - they are shown in ExerciseTimerModal popup) */}
         <div className="prose max-w-none mb-6">
-          {renderContent(slide.content)}
+          {renderMarkdownContent(exerciseContent, { skipFirstHeading: true })}
         </div>
 
         {/* Checklist for evaluation slides */}
@@ -158,7 +103,7 @@ export function PracticeSlide({
           <div className="mt-6 pt-6 border-t border-[var(--color-border-light)]">
             <h3 className="text-sm font-medium text-[var(--color-text)] mb-4 flex items-center gap-2">
               <ListChecks className="w-4 h-4" aria-hidden="true" />
-              Checklist d'auto-évaluation
+              Checklist d&apos;auto-évaluation
             </h3>
             <div className="space-y-3">
               {slide.checklist.map((item, index) => (

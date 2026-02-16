@@ -89,7 +89,7 @@ export function QuizContainer({
       if (data.passed) {
         onQuizPassed();
       }
-    } catch (err) {
+    } catch {
       setError("Erreur lors de l'envoi du quiz. Veuillez réessayer.");
     } finally {
       setIsSubmitting(false);

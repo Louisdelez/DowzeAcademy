@@ -50,15 +50,6 @@ export function selectQuestions(
       ? questions.length
       : questionsToShow;
 
-  // T045: Log selection operation
-  console.log('[Quiz Randomization] selectQuestions:', {
-    poolSize: questions.length,
-    questionsToShow,
-    selectedCount: count,
-    shuffleQuestions,
-    seed: seed ? `${seed.slice(0, 8)}...` : 'none',
-  });
-
   if (shuffleQuestions) {
     // Shuffle and take first N
     return selectRandom(questions, count, seed);

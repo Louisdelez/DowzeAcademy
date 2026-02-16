@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
+import Link from 'next/link';
 import { ModuleCard } from '@/components/cards/ModuleCard';
 import { ProgressStats } from '@/components/progression/ProgressStats';
 import { StalenessIndicator } from '@/components/connectivity/StalenessIndicator';
@@ -19,7 +20,7 @@ interface ProgressionData {
 }
 
 export function DisciplineModules({ disciplineId, modules }: DisciplineModulesProps) {
-  const { data: session, status } = useSession();
+  const { status } = useSession();
   const [progression, setProgression] = useState<ProgressionData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
@@ -105,13 +106,13 @@ export function DisciplineModules({ disciplineId, modules }: DisciplineModulesPr
           }}
         >
           <p className="text-sm" style={{ color: 'var(--ctp-blue)' }}>
-            <a
+            <Link
               href="/login"
               className="font-medium underline"
               style={{ color: 'var(--ctp-blue)' }}
             >
               Connectez-vous
-            </a>{' '}
+            </Link>{' '}
             pour suivre votre progression et débloquer les modules.
           </p>
         </div>

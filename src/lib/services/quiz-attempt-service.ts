@@ -5,7 +5,7 @@
  */
 
 import { prisma } from '@/lib/db/client';
-import { selectQuestions, prepareRandomizedQuestions } from './quiz-randomization-service';
+import { selectQuestions, prepareRandomizedQuestions, normalizeConfig } from './quiz-randomization-service';
 import { generateSeed } from '@/lib/utils/shuffle';
 import type {
   QuizQuestionData,
@@ -60,12 +60,12 @@ export async function createAttempt(params: CreateAttemptParams): Promise<Create
     throw new Error('Lesson not found');
   }
 
-  // Build configuration
-  const config: QuizRandomizationConfig = {
+  // Build configuration with defaults (shuffleQuestions and shuffleAnswers default to true)
+  const config = normalizeConfig({
     questionsToShow: lesson.questionsToShow,
     shuffleQuestions: lesson.shuffleQuestions,
     shuffleAnswers: lesson.shuffleAnswers,
-  };
+  });
 
   // Convert to internal format
   const questionsData: QuizQuestionData[] = lesson.questions.map((q) => ({

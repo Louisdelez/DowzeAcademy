@@ -35,7 +35,7 @@ export function PracticeCompletion({ moduleId, onComplete }: PracticeCompletionP
       }
 
       onComplete();
-    } catch (err) {
+    } catch {
       setError('Erreur lors de la validation. Veuillez réessayer.');
       setIsSubmitting(false);
     }

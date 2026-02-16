@@ -1,7 +1,9 @@
 'use client';
 
+import React from 'react';
 import type { TheorySlide as TheorySlideType, SlideDirection } from '@/types/slides';
 import { BookOpen, Lightbulb, Code, AlertTriangle, CheckCircle } from 'lucide-react';
+import { renderMarkdownContent } from '@/lib/utils/markdown-renderer';
 
 interface TheorySlideProps {
   slide: TheorySlideType;
@@ -30,86 +32,6 @@ export function TheorySlide({ slide, direction, isReviewMode, onReturnToQuiz }: 
   const Icon = typeIcons[slide.type] || BookOpen;
   const iconColor = typeColors[slide.type] || 'var(--color-primary)';
   const animationClass = direction === 'forward' ? 'slide-enter-forward' : 'slide-enter-backward';
-  const renderInlineMarkdown = (text: string) => {
-    // Bold
-    let processed = text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-    // Inline code - using CSS variable
-    processed = processed.replace(
-      /`(.+?)`/g,
-      '<code style="background-color: var(--color-bg-tertiary); padding: 0 0.25rem; border-radius: 0.25rem; font-size: 0.875rem;">$1</code>'
-    );
-    return <span dangerouslySetInnerHTML={{ __html: processed }} />;
-  };
-
-  const renderContent = (content: string) => {
-    return content.split('\n').map((line, index) => {
-      // Subheadings (### within slides)
-      if (line.startsWith('### ')) {
-        return (
-          <h3
-            key={index}
-            className="text-lg font-semibold mt-6 mb-3"
-            style={{ color: 'var(--color-text)' }}
-          >
-            {line.slice(4)}
-          </h3>
-        );
-      }
-      // Lists
-      if (line.startsWith('- ')) {
-        return (
-          <li
-            key={index}
-            className="ml-4 list-disc"
-            style={{ color: 'var(--color-text-secondary)' }}
-          >
-            {renderInlineMarkdown(line.slice(2))}
-          </li>
-        );
-      }
-      if (/^\d+\.\s/.test(line)) {
-        return (
-          <li
-            key={index}
-            className="ml-4 list-decimal"
-            style={{ color: 'var(--color-text-secondary)' }}
-          >
-            {renderInlineMarkdown(line.replace(/^\d+\.\s/, ''))}
-          </li>
-        );
-      }
-      // Code blocks (simplified)
-      if (line.startsWith('```')) {
-        return null;
-      }
-      // Table rows (simplified - just show as text)
-      if (line.startsWith('|')) {
-        return (
-          <p
-            key={index}
-            className="font-mono text-sm my-1"
-            style={{ color: 'var(--color-text-muted)' }}
-          >
-            {line}
-          </p>
-        );
-      }
-      // Empty lines
-      if (line.trim() === '') {
-        return <br key={index} />;
-      }
-      // Regular paragraphs
-      return (
-        <p
-          key={index}
-          className="my-2 leading-relaxed"
-          style={{ color: 'var(--color-text-secondary)' }}
-        >
-          {renderInlineMarkdown(line)}
-        </p>
-      );
-    });
-  };
 
   return (
     <div
@@ -162,7 +84,7 @@ export function TheorySlide({ slide, direction, isReviewMode, onReturnToQuiz }: 
 
         {/* Slide content */}
         <div className="prose max-w-none">
-          {renderContent(slide.content)}
+          {renderMarkdownContent(slide.content)}
         </div>
       </div>
     </div>

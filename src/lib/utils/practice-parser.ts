@@ -1,50 +1,4 @@
-import type { PracticeSlide, PracticeSlideType } from '@/types/slides';
-
-/**
- * Detect practice slide type from title keywords
- */
-function detectPracticeSlideType(title: string): PracticeSlideType {
-  const lowerTitle = title.toLowerCase();
-
-  if (
-    lowerTitle.includes('objectif') ||
-    lowerTitle.includes('brief') ||
-    lowerTitle.includes('but') ||
-    lowerTitle.includes('goal')
-  ) {
-    return 'brief';
-  }
-
-  if (
-    lowerTitle.includes('préparation') ||
-    lowerTitle.includes('setup') ||
-    lowerTitle.includes('prérequis') ||
-    lowerTitle.includes('avant')
-  ) {
-    return 'setup';
-  }
-
-  if (
-    lowerTitle.includes('évaluation') ||
-    lowerTitle.includes('auto-évaluation') ||
-    lowerTitle.includes('checklist') ||
-    lowerTitle.includes('vérification')
-  ) {
-    return 'evaluation';
-  }
-
-  if (
-    lowerTitle.includes('suite') ||
-    lowerTitle.includes('next') ||
-    lowerTitle.includes('prochaine') ||
-    lowerTitle.includes('continuer')
-  ) {
-    return 'next';
-  }
-
-  // Default to step
-  return 'step';
-}
+import type { PracticeSlide } from '@/types/slides';
 
 /**
  * Extract checklist items from content
@@ -63,87 +17,28 @@ function extractChecklist(content: string): string[] | undefined {
 }
 
 /**
- * Parse markdown practice instructions into slides.
- * Splits content by ## headings, each becoming a separate slide.
- * Detects checklist items in evaluation slides.
+ * Parse markdown practice instructions into a single slide.
+ * All practice content is displayed on one slide for a streamlined experience.
  */
 export function parsePracticeSlides(markdown: string): PracticeSlide[] {
   if (!markdown || markdown.trim().length === 0) {
     return [];
   }
 
-  const slides: PracticeSlide[] = [];
+  // Create a single slide with all practice content
+  const slide: PracticeSlide = {
+    id: 'practice-slide-0',
+    title: 'Exercice pratique',
+    content: markdown.trim(),
+    slideNumber: 1,
+    type: 'brief',
+  };
 
-  // Split by ## headings while keeping the delimiter
-  const sections = markdown.split(/(?=^## )/m);
-
-  sections.forEach((section) => {
-    const trimmed = section.trim();
-    if (trimmed.length === 0) return;
-
-    const lines = trimmed.split('\n');
-    const firstLine = lines[0];
-
-    // Check if this section starts with a ## heading
-    const isH2Heading = firstLine.startsWith('## ');
-
-    let title: string;
-    let content: string;
-
-    if (isH2Heading) {
-      // Extract title from ## heading
-      title = firstLine.slice(3).trim();
-      // Content is everything after the heading
-      content = lines.slice(1).join('\n').trim();
-    } else {
-      // No ## heading - this is content before the first ##
-      // Skip lines that are just the main # title
-      const contentLines = lines.filter((line) => !line.startsWith('# '));
-      content = contentLines.join('\n').trim();
-
-      // If there's actual content before the first ##, create a Brief slide
-      if (content.length > 0) {
-        title = 'Objectif';
-      } else {
-        // No content, just a # title - skip this section
-        return;
-      }
-    }
-
-    // Only add slides that have actual content
-    if (content.length > 0) {
-      const type = detectPracticeSlideType(title);
-
-      const slide: PracticeSlide = {
-        id: `practice-slide-${slides.length}`,
-        title,
-        content,
-        slideNumber: slides.length + 1,
-        type,
-      };
-
-      // Extract checklist for evaluation slides
-      if (type === 'evaluation') {
-        const checklist = extractChecklist(content);
-        if (checklist && checklist.length > 0) {
-          slide.checklist = checklist;
-        }
-      }
-
-      slides.push(slide);
-    }
-  });
-
-  // If no slides were created but there's content, create a single brief slide
-  if (slides.length === 0 && markdown.trim().length > 0) {
-    slides.push({
-      id: 'practice-slide-0',
-      title: 'Instructions',
-      content: markdown.trim(),
-      slideNumber: 1,
-      type: 'brief',
-    });
+  // Check if content contains checklist items
+  const checklist = extractChecklist(markdown);
+  if (checklist && checklist.length > 0) {
+    slide.checklist = checklist;
   }
 
-  return slides;
+  return [slide];
 }
