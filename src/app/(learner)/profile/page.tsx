@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState, useCallback } from 'react';
 import { useSession, signIn, signOut } from 'next-auth/react';
 import { Button } from '@/components/ui/Button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
@@ -7,8 +8,32 @@ import { ThemeSelector } from '@/components/ui/ThemeSelector';
 import { QuizAttemptHistory } from '@/components/lesson/QuizAttemptHistory';
 import { UserNotesSection } from '@/components/profile/UserNotesSection';
 
+interface UserStats {
+  completedModules: number;
+  passedQuizzes: number;
+  studyTime: string;
+}
+
 export default function ProfilePage() {
   const { data: session, status } = useSession();
+  const [stats, setStats] = useState<UserStats | null>(null);
+
+  const fetchStats = useCallback(async () => {
+    try {
+      const response = await fetch('/api/user/stats');
+      if (response.ok) {
+        setStats(await response.json());
+      }
+    } catch (error) {
+      console.error('Failed to fetch stats:', error);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (status === 'authenticated') {
+      fetchStats();
+    }
+  }, [status, fetchStats]);
 
   if (status === 'loading') {
     return (
@@ -99,7 +124,7 @@ export default function ProfilePage() {
                 className="text-2xl font-bold"
                 style={{ color: 'var(--ctp-blue)' }}
               >
-                0
+                {stats?.completedModules ?? '-'}
               </p>
               <p
                 className="text-sm"
@@ -116,7 +141,7 @@ export default function ProfilePage() {
                 className="text-2xl font-bold"
                 style={{ color: 'var(--ctp-green)' }}
               >
-                0
+                {stats?.passedQuizzes ?? '-'}
               </p>
               <p
                 className="text-sm"
@@ -133,7 +158,7 @@ export default function ProfilePage() {
                 className="text-2xl font-bold"
                 style={{ color: 'var(--ctp-mauve)' }}
               >
-                0h
+                {stats?.studyTime ?? '-'}
               </p>
               <p
                 className="text-sm"

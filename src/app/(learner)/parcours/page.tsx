@@ -8,32 +8,11 @@ import { Card, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Icon } from '@/components/icons';
 
-interface ModuleProgress {
-  id: string;
-  name: string;
-  description: string | null;
-  status: 'LOCKED' | 'AVAILABLE' | 'IN_PROGRESS' | 'COMPLETED';
-}
-
-interface DisciplineProgress {
-  id: string;
-  name: string;
-  modules: ModuleProgress[];
-  completedCount: number;
-  totalCount: number;
-}
-
-interface PackProgress {
-  id: string;
-  name: string;
-  disciplines: DisciplineProgress[];
-}
-
-interface DomainProgress {
+interface DomainData {
   id: string;
   name: string;
   icon: string | null;
-  packs: PackProgress[];
+  _count: { packs: number };
 }
 
 function isIconPath(icon: string | null): boolean {
@@ -42,21 +21,16 @@ function isIconPath(icon: string | null): boolean {
 
 export default function ParcoursPage() {
   const { data: session, status } = useSession();
-  const [domains, setDomains] = useState<DomainProgress[]>([]);
+  const [domains, setDomains] = useState<DomainData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchProgress = async () => {
       try {
-        // Fetch domains with progression
         const response = await fetch('/api/content/domains');
         if (response.ok) {
           const data = await response.json();
-          // Transform data to include progress info
-          setDomains(data.map((d: DomainProgress) => ({
-            ...d,
-            packs: d.packs || [],
-          })));
+          setDomains(data);
         }
       } catch (error) {
         console.error('Failed to fetch progress:', error);
@@ -138,9 +112,9 @@ export default function ParcoursPage() {
                         {domain.name}
                       </h2>
                       <p className="text-sm mt-1" style={{ color: 'var(--color-text-muted)' }}>
-                        {domain.packs?.length || 0} pack
-                        {(domain.packs?.length || 0) > 1 ? 's' : ''} disponible
-                        {(domain.packs?.length || 0) > 1 ? 's' : ''}
+                        {domain._count?.packs || 0} pack
+                        {(domain._count?.packs || 0) > 1 ? 's' : ''} disponible
+                        {(domain._count?.packs || 0) > 1 ? 's' : ''}
                       </p>
                     </div>
                     <Icon name="chevron-right" size={24} color="muted" />
