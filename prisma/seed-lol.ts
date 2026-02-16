@@ -137,7 +137,8 @@ async function main() {
             lessonId: lesson.id,
             questionText: q.text,
             questionType: QuestionType.SINGLE_CHOICE,
-            options: q.options,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            options: q.options as any,
             correctAnswer: q.correctAnswer,
             feedback: q.feedback || null,
             linkedTheorySection: q.linkedTheorySection || null,

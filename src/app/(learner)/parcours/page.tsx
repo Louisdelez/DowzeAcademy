@@ -3,8 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Card, CardContent } from '@/components/ui/Card';
-import { ProgressBar } from '@/components/progression/ProgressBar';
 import { Button } from '@/components/ui/Button';
 import { Icon } from '@/components/icons';
 
@@ -36,6 +36,10 @@ interface DomainProgress {
   packs: PackProgress[];
 }
 
+function isIconPath(icon: string | null): boolean {
+  return !!icon && (icon.startsWith('/') || icon.startsWith('http'));
+}
+
 export default function ParcoursPage() {
   const { data: session, status } = useSession();
   const [domains, setDomains] = useState<DomainProgress[]>([]);
@@ -49,7 +53,7 @@ export default function ParcoursPage() {
         if (response.ok) {
           const data = await response.json();
           // Transform data to include progress info
-          setDomains(data.map((d: any) => ({
+          setDomains(data.map((d: DomainProgress) => ({
             ...d,
             packs: d.packs || [],
           })));
@@ -122,7 +126,13 @@ export default function ParcoursPage() {
               <Card className="hover:shadow-md transition-shadow cursor-pointer">
                 <CardContent className="p-6">
                   <div className="flex items-start gap-4">
-                    <div className="text-4xl">{domain.icon || '📖'}</div>
+                    <div className="text-4xl">
+                      {isIconPath(domain.icon) ? (
+                        <Image src={domain.icon!} alt={domain.name} width={48} height={48} />
+                      ) : (
+                        domain.icon || '📖'
+                      )}
+                    </div>
                     <div className="flex-1">
                       <h2 className="text-xl font-semibold" style={{ color: 'var(--color-text)' }}>
                         {domain.name}
@@ -132,12 +142,6 @@ export default function ParcoursPage() {
                         {(domain.packs?.length || 0) > 1 ? 's' : ''} disponible
                         {(domain.packs?.length || 0) > 1 ? 's' : ''}
                       </p>
-                      <div className="mt-3">
-                        <ProgressBar value={0} size="sm" />
-                        <p className="text-xs mt-1" style={{ color: 'var(--color-text-muted)' }}>
-                          0% complété
-                        </p>
-                      </div>
                     </div>
                     <Icon name="chevron-right" size={24} color="muted" />
                   </div>

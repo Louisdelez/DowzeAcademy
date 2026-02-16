@@ -173,9 +173,20 @@ export function UserNotesSection() {
     return acc;
   }, {} as GroupedNotes);
 
-  // Simple markdown renderer
+  // Sanitize HTML to prevent XSS
+  const sanitizeHtml = (html: string): string => {
+    return html
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  };
+
+  // Simple markdown renderer (with XSS sanitization)
   const renderMarkdown = (text: string) => {
-    let html = text
+    const safeText = sanitizeHtml(text);
+    const html = safeText
       .replace(/^### (.+)$/gm, '<h3 class="text-base font-semibold mt-2 mb-1">$1</h3>')
       .replace(/^## (.+)$/gm, '<h2 class="text-lg font-semibold mt-2 mb-1">$1</h2>')
       .replace(/^# (.+)$/gm, '<h1 class="text-xl font-bold mt-2 mb-1">$1</h1>')

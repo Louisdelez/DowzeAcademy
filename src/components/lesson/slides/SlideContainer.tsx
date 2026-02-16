@@ -175,13 +175,11 @@ export function SlideContainer({
     totalPracticeSlides,
     quizResult,
     wrongQuestions,
-    getSlideState,
     // Feature 005: Quiz attempt
     attemptId,
     attemptQuestions,
     currentAttemptQuestion,
     initializeQuizAttempt,
-    submitQuizAttempt,
     serverIsCorrect,
   } = useSlideNavigation({
     moduleId,
@@ -286,10 +284,6 @@ export function SlideContainer({
     return 'Suivant';
   };
 
-  // Check for empty phases - skip quiz if no questions
-  const hasQuiz = totalQuizQuestions > 0;
-  const hasPractice = totalPracticeSlides > 0;
-
   // Handle return to quiz from theory review
   const handleReturnToQuiz = useCallback(() => {
     if (state.returnToQuizIndex !== null) {
@@ -347,8 +341,8 @@ export function SlideContainer({
           questionType: currentAttemptQuestion.questionType as 'SINGLE_CHOICE' | 'MULTIPLE_CHOICE' | 'SHORT_TEXT',
           options: null, // Not used when randomizedChoices is provided
           correctAnswer: '', // Not needed for display, server handles validation
-          feedback: currentAttemptQuestion.feedback,
-          linkedTheorySection: currentAttemptQuestion.linkedTheorySection,
+          feedback: currentAttemptQuestion.feedback ?? null,
+          linkedTheorySection: currentAttemptQuestion.linkedTheorySection ?? null,
           slideNumber: state.quizIndex + 1,
           totalQuestions: attemptQuestions.length > 0 ? attemptQuestions.length : totalQuizQuestions,
         };

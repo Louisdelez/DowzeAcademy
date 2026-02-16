@@ -2,7 +2,6 @@
 
 import Link from 'next/link';
 import { Lock, CheckCircle, PlayCircle, Circle } from 'lucide-react';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/Card';
 import { ProgressStats as ProgressStatsComponent } from '@/components/progression/ProgressStats';
 import { useAdminMode } from '@/lib/hooks/useAdminMode';
 import type { Discipline } from '@/types/models';

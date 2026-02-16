@@ -17,22 +17,22 @@ const CONTENT_DIR = '/home/louisdelez/Documents/ContenueCours/9CO/cours/francais
 
 // Chapter configuration with names and descriptions
 const CHAPTERS_CONFIG = [
-  { folder: 'chapitre-01-entrer-au-cycle', name: "Entrer au Cycle d'Orientation", description: "Introduction au Cycle d'Orientation et aux attentes en francais" },
-  { folder: 'chapitre-02-texte-narratif', name: "Lecture : comprendre un texte narratif", description: "Comprendre les recits, contes, nouvelles et romans" },
+  { folder: 'chapitre-01-entrer-au-cycle', name: "Entrer au Cycle d'Orientation", description: "Introduction au Cycle d'Orientation et aux attentes en français" },
+  { folder: 'chapitre-02-texte-narratif', name: "Lecture : comprendre un texte narratif", description: "Comprendre les récits, contes, nouvelles et romans" },
   { folder: 'chapitre-03-texte-informatif', name: "Lecture : comprendre un texte informatif", description: "Comprendre les textes informatifs et explicatifs" },
   { folder: 'chapitre-04-texte-argumentatif', name: "Lecture : comprendre un texte argumentatif", description: "Initiation au texte argumentatif" },
-  { folder: 'chapitre-05-expression-orale', name: "Expression orale : s'exprimer clairement", description: "Developper ses competences d'expression orale" },
-  { folder: 'chapitre-06-ecrire-narratif', name: "Ecriture : ecrire un texte narratif", description: "Apprendre a rediger des recits" },
-  { folder: 'chapitre-07-ecrire-informatif', name: "Ecriture : ecrire pour informer et expliquer", description: "Rediger des textes informatifs et explicatifs" },
-  { folder: 'chapitre-08-exprimer-opinion', name: "Ecriture : exprimer son opinion", description: "Rediger des textes argumentatifs simples" },
-  { folder: 'chapitre-09-grammaire-phrase', name: "Grammaire : les bases de la phrase", description: "Maitriser la structure de la phrase" },
-  { folder: 'chapitre-10-classes-mots', name: "Grammaire : les classes de mots", description: "Identifier et utiliser les differentes classes de mots" },
-  { folder: 'chapitre-11-conjugaison', name: "Conjugaison : temps et modes essentiels", description: "Maitriser les temps et modes de base" },
-  { folder: 'chapitre-12-orthographe-grammaticale', name: "Orthographe grammaticale", description: "Maitriser les accords et l'orthographe grammaticale" },
-  { folder: 'chapitre-13-orthographe-vocabulaire', name: "Orthographe lexicale et vocabulaire", description: "Enrichir son vocabulaire et maitriser l'orthographe lexicale" },
-  { folder: 'chapitre-14-methodes-travail', name: "Methodes de travail en francais", description: "Developper des methodes de travail efficaces" },
-  { folder: 'chapitre-15-culture-litteraire', name: "Culture litteraire (initiation)", description: "Decouvrir la litterature et ses genres" },
-  { folder: 'chapitre-16-projet-synthese', name: "Projet et synthese de fin d'annee", description: "Reinvestir les competences acquises" },
+  { folder: 'chapitre-05-expression-orale', name: "Expression orale : s'exprimer clairement", description: "Développer ses compétences d'expression orale" },
+  { folder: 'chapitre-06-ecrire-narratif', name: "Écriture : écrire un texte narratif", description: "Apprendre à rédiger des récits" },
+  { folder: 'chapitre-07-ecrire-informatif', name: "Écriture : écrire pour informer et expliquer", description: "Rédiger des textes informatifs et explicatifs" },
+  { folder: 'chapitre-08-exprimer-opinion', name: "Écriture : exprimer son opinion", description: "Rédiger des textes argumentatifs simples" },
+  { folder: 'chapitre-09-grammaire-phrase', name: "Grammaire : les bases de la phrase", description: "Maîtriser la structure de la phrase" },
+  { folder: 'chapitre-10-classes-mots', name: "Grammaire : les classes de mots", description: "Identifier et utiliser les différentes classes de mots" },
+  { folder: 'chapitre-11-conjugaison', name: "Conjugaison : temps et modes essentiels", description: "Maîtriser les temps et modes de base" },
+  { folder: 'chapitre-12-orthographe-grammaticale', name: "Orthographe grammaticale", description: "Maîtriser les accords et l'orthographe grammaticale" },
+  { folder: 'chapitre-13-orthographe-vocabulaire', name: "Orthographe lexicale et vocabulaire", description: "Enrichir son vocabulaire et maîtriser l'orthographe lexicale" },
+  { folder: 'chapitre-14-methodes-travail', name: "Méthodes de travail en français", description: "Développer des méthodes de travail efficaces" },
+  { folder: 'chapitre-15-culture-litteraire', name: "Culture littéraire (initiation)", description: "Découvrir la littérature et ses genres" },
+  { folder: 'chapitre-16-projet-synthese', name: "Projet et synthèse de fin d'année", description: "Réinvestir les compétences acquises" },
 ];
 
 interface QuizQuestion {
@@ -103,6 +103,142 @@ function parseQuizFile(content: string): QuizQuestion[] {
   return questions;
 }
 
+// Restore French accents in module names generated from filenames
+const ACCENT_MAP: Record<string, string> = {
+  'francais': 'français',
+  'role': 'rôle',
+  'ecriture': 'écriture',
+  'ecrire': 'écrire',
+  'pedagogique': 'pédagogique',
+  'matieres': 'matières',
+  'reussite': 'réussite',
+  'reviser': 'réviser',
+  'methodes': 'méthodes',
+  'methode': 'méthode',
+  'litteraire': 'littéraire',
+  'litterature': 'littérature',
+  'decouvrir': 'découvrir',
+  'developper': 'développer',
+  'competences': 'compétences',
+  'competence': 'compétence',
+  'maitriser': 'maîtriser',
+  'maitrise': 'maîtrise',
+  'differentes': 'différentes',
+  'differente': 'différente',
+  'differents': 'différents',
+  'different': 'différent',
+  'recits': 'récits',
+  'recit': 'récit',
+  'rediger': 'rédiger',
+  'synthese': 'synthèse',
+  'annee': 'année',
+  'reinvestir': 'réinvestir',
+  'essentiel': 'essentiel',
+  'attentes': 'attentes',
+  'oral': 'oral',
+  'orientation': 'orientation',
+  'vocabulaire': 'vocabulaire',
+  'orthographe': 'orthographe',
+  'conjugaison': 'conjugaison',
+  'grammaire': 'grammaire',
+  'scolaire': 'scolaire',
+  'consignes': 'consignes',
+  'comprendre': 'comprendre',
+  'organiser': 'organiser',
+  'bases': 'bases',
+  'entrer': 'entrer',
+  'exprimer': 'exprimer',
+  'informer': 'informer',
+  'expliquer': 'expliquer',
+  'opinion': 'opinion',
+  'projet': 'projet',
+  'culture': 'culture',
+  'initiation': 'initiation',
+  'temps': 'temps',
+  'modes': 'modes',
+  'classes': 'classes',
+  'mots': 'mots',
+  'phrase': 'phrase',
+  'texte': 'texte',
+  'narratif': 'narratif',
+  'informatif': 'informatif',
+  'argumentatif': 'argumentatif',
+  'lexicale': 'lexicale',
+  'grammaticale': 'grammaticale',
+  'accords': 'accords',
+  'expression': 'expression',
+  'lecture': 'lecture',
+  'travail': 'travail',
+  'analyser': 'analyser',
+  'identifier': 'identifier',
+  'utiliser': 'utiliser',
+  'evaluer': 'évaluer',
+  'evaluation': 'évaluation',
+  'etude': 'étude',
+  'etudier': 'étudier',
+  'elaborer': 'élaborer',
+  'elements': 'éléments',
+  'element': 'élément',
+  'resumer': 'résumer',
+  'resume': 'résumé',
+  'creer': 'créer',
+  'creation': 'création',
+  'interpreter': 'interpréter',
+  'interpretation': 'interprétation',
+  'reflechir': 'réfléchir',
+  'reflexion': 'réflexion',
+  'repondre': 'répondre',
+  'reponse': 'réponse',
+  'reperer': 'repérer',
+  'presenter': 'présenter',
+  'presentation': 'présentation',
+  'preparer': 'préparer',
+  'preparation': 'préparation',
+  'preciser': 'préciser',
+  'precis': 'précis',
+  'generer': 'générer',
+  'general': 'général',
+  'generale': 'générale',
+  'generaux': 'généraux',
+  'specifique': 'spécifique',
+  'specifiques': 'spécifiques',
+  'interessant': 'intéressant',
+  'interessante': 'intéressante',
+  'necessaire': 'nécessaire',
+  'necessaires': 'nécessaires',
+  'regulier': 'régulier',
+  'reguliere': 'régulière',
+  'regulierement': 'régulièrement',
+  'verite': 'vérité',
+  'verifier': 'vérifier',
+  'derniere': 'dernière',
+  'premiere': 'première',
+  'deuxieme': 'deuxième',
+  'troisieme': 'troisième',
+  'quatrieme': 'quatrième',
+  'cinquieme': 'cinquième',
+  'sixieme': 'sixième',
+  'septieme': 'septième',
+  'huitieme': 'huitième',
+  'neuvieme': 'neuvième',
+  'dixieme': 'dixième',
+  'strategie': 'stratégie',
+  'strategies': 'stratégies',
+};
+
+function restoreAccents(text: string): string {
+  return text.split(' ').map(word => {
+    const lower = word.toLowerCase();
+    const replacement = ACCENT_MAP[lower];
+    if (!replacement) return word;
+    // Preserve original capitalization
+    if (word[0] === word[0].toUpperCase()) {
+      return replacement.charAt(0).toUpperCase() + replacement.slice(1);
+    }
+    return replacement;
+  }).join(' ');
+}
+
 // Extract module name from filename
 function getModuleName(filename: string): string {
   // Remove number prefix and extension: "01-role-du-francais.md" -> "Le role du francais"
@@ -111,8 +247,9 @@ function getModuleName(filename: string): string {
     .replace(/\.md$/, '') // Remove extension
     .replace(/-/g, ' '); // Replace dashes with spaces
 
-  // Capitalize first letter
-  return baseName.charAt(0).toUpperCase() + baseName.slice(1);
+  // Capitalize first letter and restore French accents
+  const name = baseName.charAt(0).toUpperCase() + baseName.slice(1);
+  return restoreAccents(name);
 }
 
 // Read module content from files
@@ -141,9 +278,9 @@ function readModuleContent(chapterDir: string, filename: string): ModuleContent 
 
     return {
       name: getModuleName(filename),
-      theory: theory || 'Contenu a venir.',
+      theory: theory || 'Contenu à venir.',
       questions: questions.length > 0 ? questions : [],
-      practice: practice || 'Exercice pratique a venir.',
+      practice: practice || 'Exercice pratique à venir.',
     };
   } catch (error) {
     console.error(`    Error reading ${baseName}:`, error);

@@ -6,7 +6,7 @@
  * de la formation League of Legends.
  */
 
-import { QuestionType, PracticeType, ContentStatus, LessonMode } from '@prisma/client';
+import { QuestionType, PracticeType, ContentStatus, LessonMode } from '../../../src/generated/prisma';
 
 /**
  * Format d'une option de question QCM

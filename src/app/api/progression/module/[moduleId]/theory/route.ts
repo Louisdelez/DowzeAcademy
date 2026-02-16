@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { cookies } from 'next/headers';
 import { authOptions } from '@/lib/auth/learner-auth';
 import { markTheoryViewed } from '@/lib/services/progression-service';
 import { validateAdminSession, getGameModeCookie } from '@/lib/auth/admin-auth';

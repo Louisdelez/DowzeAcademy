@@ -6,7 +6,7 @@
  * du contenu pédagogique via le script de seed.
  */
 
-import { QuestionType, PracticeType, ContentStatus, LessonMode } from '@prisma/client';
+import { QuestionType, PracticeType, ContentStatus, LessonMode } from '../../../src/generated/prisma';
 
 // ============================================
 // INTERFACES PRINCIPALES
@@ -80,7 +80,7 @@ export const DEFAULT_MODULE_CONFIG = {
   shuffleQuestions: true,
   shuffleAnswers: true,
   questionsToShow: 15,
-  practiceType: PracticeType.TIMED,
+  practiceType: PracticeType.EXERCICES,
   status: ContentStatus.PUBLISHED,
 } as const;
 

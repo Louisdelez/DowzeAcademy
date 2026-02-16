@@ -69,6 +69,7 @@ interface SearchPromptButtonProps {
 }
 
 export function SearchPromptButton({
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   domainName,
   disciplineName,
   moduleName,

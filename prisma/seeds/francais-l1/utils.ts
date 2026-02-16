@@ -1,5 +1,5 @@
 // Utility types and helpers for Français L1 9CO content creation
-import { LessonMode } from '@prisma/client';
+import { LessonMode } from '../../../src/generated/prisma';
 
 export interface QuizQuestion {
   question: string;

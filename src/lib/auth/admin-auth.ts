@@ -1,6 +1,7 @@
 import { compare, hash } from 'bcryptjs';
 import { cookies } from 'next/headers';
 import { type NextRequest } from 'next/server';
+import { createHmac } from 'crypto';
 
 const ADMIN_SESSION_COOKIE = 'admin_session';
 const ADMIN_GAME_MODE_COOKIE = 'admin_game_mode';
@@ -11,6 +12,38 @@ interface AdminSession {
   expiresAt: number;
 }
 
+function getSigningSecret(): string {
+  return process.env.NEXTAUTH_SECRET || process.env.ADMIN_SESSION_SECRET || '';
+}
+
+function signData(data: string): string {
+  const secret = getSigningSecret();
+  if (!secret) return '';
+  return createHmac('sha256', secret).update(data).digest('hex');
+}
+
+function createSignedCookie(session: AdminSession): string {
+  const payload = Buffer.from(JSON.stringify(session)).toString('base64');
+  const signature = signData(payload);
+  return `${payload}.${signature}`;
+}
+
+function verifySignedCookie(cookieValue: string): AdminSession | null {
+  const parts = cookieValue.split('.');
+  if (parts.length !== 2) return null;
+
+  const [payload, signature] = parts;
+  const expectedSignature = signData(payload);
+
+  if (!expectedSignature || signature !== expectedSignature) return null;
+
+  try {
+    return JSON.parse(Buffer.from(payload, 'base64').toString());
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Validates admin credentials against environment variables (MVP)
  */
@@ -18,21 +51,19 @@ export async function validateAdminCredentials(
   username: string,
   password: string
 ): Promise<boolean> {
-  const adminUsername = process.env.ADMIN_USERNAME || 'admin';
-  const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
+  const adminUsername = process.env.ADMIN_USERNAME;
   const adminPasswordHash = process.env.ADMIN_PASSWORD_HASH;
+
+  if (!adminUsername || !adminPasswordHash) {
+    console.error('ADMIN_USERNAME and ADMIN_PASSWORD_HASH environment variables must be set');
+    return false;
+  }
 
   if (username !== adminUsername) {
     return false;
   }
 
-  // If hash is configured, use secure comparison
-  if (adminPasswordHash) {
-    return compare(password, adminPasswordHash);
-  }
-
-  // Fallback to plain comparison for development
-  return password === adminPassword;
+  return compare(password, adminPasswordHash);
 }
 
 /**
@@ -44,7 +75,7 @@ export async function createAdminSession(username: string): Promise<void> {
     expiresAt: Date.now() + SESSION_DURATION,
   };
 
-  const sessionData = Buffer.from(JSON.stringify(session)).toString('base64');
+  const sessionData = createSignedCookie(session);
 
   const cookieStore = await cookies();
   cookieStore.set(ADMIN_SESSION_COOKIE, sessionData, {
@@ -67,19 +98,12 @@ export async function validateAdminSession(): Promise<AdminSession | null> {
     return null;
   }
 
-  try {
-    const session: AdminSession = JSON.parse(
-      Buffer.from(sessionCookie.value, 'base64').toString()
-    );
-
-    if (session.expiresAt < Date.now()) {
-      return null;
-    }
-
-    return session;
-  } catch {
+  const session = verifySignedCookie(sessionCookie.value);
+  if (!session || session.expiresAt < Date.now()) {
     return null;
   }
+
+  return session;
 }
 
 /**
@@ -100,14 +124,8 @@ export async function isAdminAuthenticated(request: NextRequest): Promise<boolea
     return false;
   }
 
-  try {
-    const session: AdminSession = JSON.parse(
-      Buffer.from(sessionCookie.value, 'base64').toString()
-    );
-    return session.expiresAt > Date.now();
-  } catch {
-    return false;
-  }
+  const session = verifySignedCookie(sessionCookie.value);
+  return session !== null && session.expiresAt > Date.now();
 }
 
 /**

@@ -103,7 +103,7 @@ export function PracticeSlide({
           <div className="mt-6 pt-6 border-t border-[var(--color-border-light)]">
             <h3 className="text-sm font-medium text-[var(--color-text)] mb-4 flex items-center gap-2">
               <ListChecks className="w-4 h-4" aria-hidden="true" />
-              Checklist d'auto-évaluation
+              Checklist d&apos;auto-évaluation
             </h3>
             <div className="space-y-3">
               {slide.checklist.map((item, index) => (
